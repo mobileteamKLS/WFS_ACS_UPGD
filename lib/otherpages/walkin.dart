@@ -24,7 +24,6 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
   String selectedVehicleText = "";
   final _controllerModeType = ValueNotifier<bool>(false);
   bool checked = false;
-
   bool isValidVehicleNo = true;
   bool isValidTruckingCompanyName = true;
   bool isValidDriverName = true;
@@ -54,6 +53,7 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
   // }
   @override
   void initState() {
+    super.initState();
     _controllerModeType.addListener(() {
       setState(() {
         //scannedCodeReceived = "";
@@ -65,7 +65,6 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
         }
       });
     });
-    super.initState();
   }
 
   @override

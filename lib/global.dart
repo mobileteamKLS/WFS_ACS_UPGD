@@ -32,9 +32,15 @@ UserDetails loggedinUser = new UserDetails(
     OrganizationtypeIdString: "");
 String displayName = "un";
 String selectedTerminal = "";
+String selectedBaseStation = "";
+String selectedBaseStationBranch = "";
 int selectedTerminalID = 0;
+int selectedBaseStationID = 0;
+int selectedBaseStationBranchID = 0;
 List suspendedBY = [];
 List<WarehouseTerminals> terminalsList = [];
+List<WarehouseBaseStation> baseStationList = [];
+List<WarehouseBaseStationBranch> baseStationBranchList = [];
 List<Vehicletypes> vehicletypesList = [];
 List<DamageType> damageTypeList = [];
 List<AcceptanceType> rejectionReasonsList = [];

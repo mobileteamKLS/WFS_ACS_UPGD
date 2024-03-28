@@ -278,15 +278,19 @@ const iPadToggleTextFontStyleWhite = TextStyle(
 );
 
 class Settings {
-
-  static const String ACSServiceURL =
-      "https://acsdemoservice.kalelogistics.com/srvMobile.asmx"; //YVRA UAT Server
-  static const String ACSServiceImageURL =
-      'https://acsdemoservice.kalelogistics.com/';
-  static const String loginUrl =
-      "https://acsdemoservice.kalelogistics.com/srvMobile.asmx";
-  static const String ACSWFSServiceURL =
-      "https://acsdemoservice.kalelogistics.com/srvMobile.asmx";
+  static const String ACSServiceURL = "https://wfssrvuat.kalelogistics.com/srvMobile.asmx"; //WFS UAT Server
+  static const String ACSServiceImageURL = 'https://wfssrvuat.kalelogistics.com/';
+  static const String loginUrl = "https://wfssrvuat.kalelogistics.com/srvMobile.asmx";
+  static const String ACSWFSServiceURL = "https://wfssrvuat.kalelogistics.com/srvMobile.asmx"; //UAT Server
+  //28MARCH
+  // static const String ACSServiceURL =
+  //     "https://acsdemoservice.kalelogistics.com/srvMobile.asmx"; //YVRA UAT Server
+  // static const String ACSServiceImageURL =
+  //     'https://acsdemoservice.kalelogistics.com/';
+  // static const String loginUrl =
+  //     "https://acsdemoservice.kalelogistics.com/srvMobile.asmx";
+  // static const String ACSWFSServiceURL =
+  //     "https://acsdemoservice.kalelogistics.com/srvMobile.asmx";
 
   //YVRA UAT LINK PROVIDED ON 31-OCT-2022 -  this is for YVRA UAT
 
@@ -397,5 +401,7 @@ class Settings {
         "/GetBookedSlotList", // get list of booked slots export
     "BookedSlotsListImport":
         "/GetImportBookedSlotList", // get list of booked slots import
+    "GetBaseStation":"/GetUserBaseStation",
+    "GetBaseStationBranch":"/GetBaseStationWiseBranch",
   };
 }
