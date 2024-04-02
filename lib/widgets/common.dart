@@ -337,3 +337,21 @@ Future<String> determinePosition() async {
   //return await Geolocator.getCurrentPosition();
   return locationMsg;
 }
+void showSnackBar(BuildContext context,msg,userMobileLayout) {
+  final snackBar = SnackBar(
+    content: Center(child: Text(msg,style: TextStyle(fontSize: 20),)),
+    backgroundColor: Color(0xFF1220BC),
+    duration: Duration(milliseconds: 500),
+
+    action: SnackBarAction(
+      label: '',
+      disabledTextColor:Colors.white,
+      textColor: Colors.yellow,
+
+      onPressed: () {
+        //Do whatever you want
+      },
+    ),
+  );
+  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+}

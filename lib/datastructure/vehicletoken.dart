@@ -527,16 +527,19 @@ class PODAWB {
 class WarehouseTerminals {
   final int custudian;
   final String custodianName;
-
+ final bool iswalkinEnable;
   WarehouseTerminals({
     required this.custudian,
     required this.custodianName,
+    required this.iswalkinEnable,
+
   });
 
   factory WarehouseTerminals.fromJson(Map<String, dynamic> json) {
     return WarehouseTerminals(
       custodianName: json['CustodianName'] == null ? "" : json['CustodianName'],
       custudian: json['CUSTODIAN'] == null ? 0 : json['CUSTODIAN'],
+      iswalkinEnable: json['IswalkinEnable'] == null ? 0 : json['IswalkinEnable'],
     );
   }
 
@@ -544,7 +547,13 @@ class WarehouseTerminals {
     var map = new Map<String, dynamic>();
     map["CUSTODIAN"] = custudian;
     map["CustodianName"] = custodianName;
+    map["IswalkinEnable"] = iswalkinEnable;
     return map;
+  }
+
+  @override
+  String toString() {
+    return "-- $custudian -- $custodianName -- $iswalkinEnable --";
   }
 }
 

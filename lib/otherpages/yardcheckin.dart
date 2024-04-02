@@ -5,12 +5,14 @@ import 'package:luxair/datastructure/vehicletoken.dart';
 import 'package:luxair/otherpages/checkin.dart';
 import 'package:luxair/otherpages/dockstatus.dart';
 import 'package:luxair/otherpages/qrscancode.dart';
+import 'package:luxair/otherpages/walkInDockStatus.dart';
 import 'package:luxair/otherpages/walkin.dart';
 import 'package:luxair/widgets/headers.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../constants.dart';
 import '../global.dart';
+import '../widgets/common.dart';
 
 // ignore: must_be_immutable
 class YardCheckIn extends StatefulWidget {
@@ -25,6 +27,7 @@ class _YardCheckInState extends State<YardCheckIn> {
   String dropdownValue = "Select";
   String selectedBaseStation = "Select";
   String selectedBaseStationBranch = "Select";
+
   List<WarehouseBaseStationBranch> dummyList = [
     WarehouseBaseStationBranch(
         organizationId: 0,
@@ -32,12 +35,15 @@ class _YardCheckInState extends State<YardCheckIn> {
         orgName: "Select",
         orgBranchName: "Select")
   ];
+  String walkIn = "";
+  bool isWalkInEnable = false;
 
   @override
   void initState() {
     // getTerminal();
     print("####### ${baseStationBranchList.toString()}########");
-    print("####### $selectedBaseStationBranch ########");
+    print("####### $selectedBaseStation ########");
+    selectedBaseStationID = 0;
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       //selectTruckerDialog(context);
       showDialog(
@@ -48,6 +54,100 @@ class _YardCheckInState extends State<YardCheckIn> {
           });
     });
     super.initState();
+  }
+
+  getTerminal() async {
+    var queryParams = {'UserId': 0, 'OrganizationId': 0};
+    await Global()
+        .postData(
+      Settings.SERVICES['GetBaseStation'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+
+      var msg = json.decode(response.body)['d'];
+      var resp = json.decode(msg).cast<Map<String, dynamic>>();
+
+      baseStationList = resp
+          .map<WarehouseBaseStation>(
+              (json) => WarehouseBaseStation.fromJson(json))
+          .toList();
+
+      WarehouseBaseStation wt = new WarehouseBaseStation(
+          airportcode: "Select", cityid: 0, organizationId: "", orgName: "");
+      baseStationList.add(wt);
+      baseStationList.sort((a, b) => a.cityid.compareTo(b.cityid));
+      print("length baseStationList = " + baseStationList.length.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
+  }
+
+  getBaseStationBranch(cityId) async {
+    baseStationBranchList = [];
+    dummyList = [];
+    selectedBaseStationBranchID = 0;
+    selectedBaseStationBranch = "Select";
+    var queryParams = {"CityId": cityId, "OrganizationId": 0, "UserId": 0};
+    await Global()
+        .postData(
+      Settings.SERVICES['GetBaseStationBranch'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+
+      var msg = json.decode(response.body)['d'];
+      var resp = json.decode(msg).cast<Map<String, dynamic>>();
+
+      baseStationBranchList = resp
+          .map<WarehouseBaseStationBranch>(
+              (json) => WarehouseBaseStationBranch.fromJson(json))
+          .toList();
+
+      WarehouseBaseStationBranch wt = new WarehouseBaseStationBranch(
+          orgName: "",
+          organizationId: 0,
+          organizationBranchId: 0,
+          orgBranchName: "Select");
+      baseStationBranchList.add(wt);
+      baseStationBranchList.sort(
+          (a, b) => a.organizationBranchId.compareTo(b.organizationBranchId));
+
+      print("length baseStationList = " +
+          baseStationBranchList.length.toString());
+      print(baseStationBranchList.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
+  }
+
+  walkInEnable() {
+    for (int i = 0; i < baseStationBranchList.length; i++) {
+      List<WarehouseTerminals> filteredTerminals = terminalsList
+          .where(
+              (terminal) => terminal.custodianName == selectedBaseStationBranch)
+          .toList();
+      setState(() {
+        isWalkInEnable = filteredTerminals[0].iswalkinEnable;
+      });
+      print(isWalkInEnable);
+    }
   }
 
   changeValue() async {
@@ -200,13 +300,16 @@ class _YardCheckInState extends State<YardCheckIn> {
                         padding: EdgeInsets.symmetric(horizontal: 10),
                         child: DropdownButton(
                           value: selectedBaseStationBranch,
+                          isDense: false,
+                          isExpanded: true,
                           onChanged: (_value) {
                             setState(() {
                               selectedBaseStationBranch = _value.toString();
                               // selectedBaseStationBranchID =
                               //     int.parse(_value.toString());
+                              walkInEnable();
                             });
-                           print(selectedBaseStationBranch);
+                            print(selectedBaseStationBranch);
                           },
                           items: dummyList
                               .map((value) => DropdownMenuItem(
@@ -323,86 +426,6 @@ class _YardCheckInState extends State<YardCheckIn> {
         );
       }),
     );
-  }
-
-  getTerminal() async {
-    var queryParams = {'UserId': 0, 'OrganizationId': 0};
-    await Global()
-        .postData(
-      Settings.SERVICES['GetBaseStation'],
-      queryParams,
-    )
-        .then((response) {
-      print("data received ");
-      print(json.decode(response.body)['d']);
-
-      var msg = json.decode(response.body)['d'];
-      var resp = json.decode(msg).cast<Map<String, dynamic>>();
-
-      baseStationList = resp
-          .map<WarehouseBaseStation>(
-              (json) => WarehouseBaseStation.fromJson(json))
-          .toList();
-
-      WarehouseBaseStation wt = new WarehouseBaseStation(
-          airportcode: "Select", cityid: 0, organizationId: "", orgName: "");
-      baseStationList.add(wt);
-      baseStationList.sort((a, b) => a.cityid.compareTo(b.cityid));
-      print("length baseStationList = " + baseStationList.length.toString());
-      setState(() {
-        isLoading = false;
-      });
-    }).catchError((onError) {
-      // setState(() {
-      //   isLoading = false;
-      // });
-      print(onError);
-    });
-  }
-
-  getBaseStationBranch(cityId) async {
-    baseStationBranchList = [];
-    dummyList = [];
-    selectedBaseStationBranchID = 0;
-    var queryParams = {"CityId": cityId, "OrganizationId": 0, "UserId": 0};
-    await Global()
-        .postData(
-      Settings.SERVICES['GetBaseStationBranch'],
-      queryParams,
-    )
-        .then((response) {
-      print("data received ");
-      print(json.decode(response.body)['d']);
-
-      var msg = json.decode(response.body)['d'];
-      var resp = json.decode(msg).cast<Map<String, dynamic>>();
-
-      baseStationBranchList = resp
-          .map<WarehouseBaseStationBranch>(
-              (json) => WarehouseBaseStationBranch.fromJson(json))
-          .toList();
-
-      WarehouseBaseStationBranch wt = new WarehouseBaseStationBranch(
-          orgName: "",
-          organizationId: 0,
-          organizationBranchId: 0,
-          orgBranchName: "Select");
-      baseStationBranchList.add(wt);
-      baseStationBranchList.sort(
-          (a, b) => a.organizationBranchId.compareTo(b.organizationBranchId));
-
-      print("length baseStationList = " +
-          baseStationBranchList.length.toString());
-      print(baseStationBranchList.toString());
-      setState(() {
-        isLoading = false;
-      });
-    }).catchError((onError) {
-      // setState(() {
-      //   isLoading = false;
-      // });
-      print(onError);
-    });
   }
 
   @override
@@ -656,7 +679,8 @@ class _YardCheckInState extends State<YardCheckIn> {
                         "Just Arrived ?",
                         "Walk-in",
                         WalkInCustomer(),
-                        useMobileLayout),
+                        useMobileLayout,
+                        isWalkInEnable),
                     RequestTypeMenuBlock(
                         Color(0xFF0052D4),
                         Color(0xFF9CECFB),
@@ -666,7 +690,8 @@ class _YardCheckInState extends State<YardCheckIn> {
                         "Slot Booked ?",
                         "Yard Check-in",
                         CheckInYard(),
-                        useMobileLayout),
+                        useMobileLayout,
+                        true),
                     RequestTypeMenuBlock(
                         Color(0xFFf2709c),
                         Color(0xFFff9472),
@@ -674,7 +699,17 @@ class _YardCheckInState extends State<YardCheckIn> {
                         "Have QR Code ?",
                         "Scan & Check-in",
                         ScanQRCode(),
-                        useMobileLayout),
+                        useMobileLayout,
+                        true),
+                    RequestTypeMenuBlock(
+                        Color(0xFFff4b1f),
+                        Color(0xFFff9068),
+                        Icons.live_tv,
+                        "Dock Status ?",
+                        "View Live",
+                        WalkInLiveDockStatus(),
+                        useMobileLayout,
+                        true),
                     // RequestTypeMenuBlock(
                     //     Color(0xFFff4b1f), // Color(0xFF1A2980),
                     //     Color(0xFFff9068),
@@ -855,7 +890,7 @@ class _YardCheckInState extends State<YardCheckIn> {
 
 class RequestTypeMenuBlock extends StatelessWidget {
   RequestTypeMenuBlock(this.color1, this.color2, this.lblicon, this.btnText1,
-      this.btnText2, this.pageroute, this.isMobile);
+      this.btnText2, this.pageroute, this.isMobile, this.isWalkInEnable);
 
   final Color color1;
   final Color color2;
@@ -864,6 +899,7 @@ class RequestTypeMenuBlock extends StatelessWidget {
   final String btnText2;
   final pageroute;
   final bool isMobile;
+  final bool isWalkInEnable;
 
   @override
   Widget build(BuildContext context) {
@@ -879,10 +915,14 @@ class RequestTypeMenuBlock extends StatelessWidget {
             alignment: Alignment.center,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => pageroute),
-                );
+                if (isWalkInEnable) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => pageroute),
+                  );
+                } else {
+                  showSnackBar(context, "Coming Soon !", isMobile);
+                }
               },
               //padding: const EdgeInsets.all(0.0),
               style: ElevatedButton.styleFrom(

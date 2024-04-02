@@ -987,7 +987,7 @@ class _LoginPageState extends State<LoginPage> {
           .map<WarehouseTerminals>((json) => WarehouseTerminals.fromJson(json))
           .toList();
 
-      WarehouseTerminals wt = new WarehouseTerminals(custudian: 0, custodianName: "Select");
+      WarehouseTerminals wt = new WarehouseTerminals(custudian: 0, custodianName: "Select",iswalkinEnable: false);
       terminalsList.add(wt);
       terminalsList.sort((a, b) => a.custudian.compareTo(b.custudian));
 

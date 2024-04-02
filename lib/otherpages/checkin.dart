@@ -1357,6 +1357,7 @@ class _CheckInYardState extends State<CheckInYard> {
       "OperationType":
           txtVTNO.text.startsWith("I") ? "2" : "1", // modeType.toString(),
       "TokenNo": txtVTNO.text.trim(),
+      "OrganizationBranchId":""
     };
     await Global()
         .postData(
@@ -1401,6 +1402,7 @@ class _CheckInYardState extends State<CheckInYard> {
     var queryParams = {
       "OperationType": "1",
       "VehicleNo": txtVehicleNo.text.trim(),
+      "OrganizationBranchId":"---"
     };
     await Global()
         .postData(
