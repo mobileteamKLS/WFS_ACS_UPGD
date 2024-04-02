@@ -220,7 +220,7 @@ class _SplashScreenState extends State<SplashScreen> {
         print("isTPS  =  " + isTPS.toString());
         print("isTruckerFF  =  " + isTruckerFF.toString());
         await getUserLocation();
-        await getTerminal();
+        await getTerminalBaseStation();
         await getTerminalsList();
         await getUserBranchList();
         await getVehicleTypesList();
@@ -237,7 +237,7 @@ class _SplashScreenState extends State<SplashScreen> {
             MaterialPageRoute(builder: (BuildContext context) => Dashboards()));
       }
     } else {
-      await getTerminal();
+      await getTerminalBaseStation();
       await getTerminalsList();
       await getUserBranchList();
       await getVehicleTypesList();
@@ -461,7 +461,7 @@ class _SplashScreenState extends State<SplashScreen> {
       ),
     );
   }
-  getTerminal() async {
+  getTerminalBaseStation() async {
     if (isLoading) return;
     setState(() {
       isLoading = true;
@@ -482,7 +482,6 @@ class _SplashScreenState extends State<SplashScreen> {
       baseStationList = resp
           .map<WarehouseBaseStation>((json) => WarehouseBaseStation.fromJson(json))
           .toList();
-
       WarehouseBaseStation wt = new WarehouseBaseStation(airportcode: "Select",cityid: 0,organizationId: "",orgName: "");
       baseStationList.add(wt);
       baseStationList.sort((a, b) => a.cityid.compareTo(b.cityid));

@@ -32,8 +32,8 @@ UserDetails loggedinUser = new UserDetails(
     OrganizationtypeIdString: "");
 String displayName = "un";
 String selectedTerminal = "";
-String selectedBaseStation = "";
-String selectedBaseStationBranch = "";
+// String selectedBaseStation = "Select";
+// String selectedBaseStationBranch = "Select";
 int selectedTerminalID = 0;
 int selectedBaseStationID = 0;
 int selectedBaseStationBranchID = 0;

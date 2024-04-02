@@ -607,6 +607,11 @@ class WarehouseBaseStationBranch {
         "OrganizationBranchId": organizationBranchId,
         "OrgBranchName": orgBranchName,
       };
+
+  @override
+  String toString() {
+    return "Data--$organizationId--$orgName--$organizationBranchId--$orgBranchName";
+  }
 }
 
 class WalInTokenDetails {

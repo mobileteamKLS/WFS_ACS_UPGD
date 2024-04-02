@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:luxair/datastructure/vehicletoken.dart';
 import 'package:luxair/widgets/customdialogue.dart';

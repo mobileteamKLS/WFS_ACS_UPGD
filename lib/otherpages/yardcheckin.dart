@@ -22,67 +22,84 @@ class YardCheckIn extends StatefulWidget {
 
 class _YardCheckInState extends State<YardCheckIn> {
   bool useMobileLayout = false, isLoading = false;
-  String dropdownValue="Select";
+  String dropdownValue = "Select";
+  String selectedBaseStation = "Select";
+  String selectedBaseStationBranch = "Select";
+  List<WarehouseBaseStationBranch> dummyList = [
+    WarehouseBaseStationBranch(
+        organizationId: 0,
+        organizationBranchId: 0,
+        orgName: "Select",
+        orgBranchName: "Select")
+  ];
+
   @override
   void initState() {
     // getTerminal();
+    print("####### ${baseStationBranchList.toString()}########");
+    print("####### $selectedBaseStationBranch ########");
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       //selectTruckerDialog(context);
-
-        showDialog(
-            barrierDismissible: false,
-            context: context,
-            builder: (context) {
-              return StatefulBuilder(builder: (context, setState) {
-                return selectTerminalBox();
-              });
-            });
-
-
+      showDialog(
+          barrierDismissible: false,
+          context: context,
+          builder: (context) {
+            return selectTerminalBox();
+          });
     });
     super.initState();
   }
+
+  changeValue() async {
+    await getBaseStationBranch(selectedBaseStationID);
+    print("******* ${baseStationBranchList.toString()} ********");
+    setState(() {
+      dummyList = baseStationBranchList;
+    });
+  }
+
   selectTerminalBox() {
     return Container(
       height: MediaQuery.of(context).size.height / 5.2, // height: 250,
-      width: MediaQuery.of(context).size.width / 4,
-      child: AlertDialog(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Select Terminal',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF11249F),
-                )),
-            GestureDetector(
-              onTap: () {
-                Navigator.of(context).pop();
-              },
-              child: Container(
-                height: 48,
-                width: 48,
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      width: 2,
-                      color: Colors.white,
-                    ),
-                    color: Colors.red,
-                    shape: BoxShape.circle),
-                child: Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 40,
+      width: MediaQuery.of(context).size.width / 3.8,
+      child: StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+        return AlertDialog(
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Select Terminal',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF11249F),
+                  )),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  height: 48,
+                  width: 48,
+                  decoration: BoxDecoration(
+                      border: Border.all(
+                        width: 2,
+                        color: Colors.white,
+                      ),
+                      color: Colors.red,
+                      shape: BoxShape.circle),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 40,
+                  ),
                 ),
               ),
-            ),
-            // ),
-          ],
-        ),
-        content: StatefulBuilder(builder: (BuildContext context,StateSetter setState){
-          return Column(
+              // ),
+            ],
+          ),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Row(
@@ -114,224 +131,200 @@ class _YardCheckInState extends State<YardCheckIn> {
                   ),
                 ],
               ),
-              SizedBox(height: 10,),
-              Row(children: [
-                SizedBox(
-                  width: MediaQuery.of(context).size.width/3.0,
-                  child: DropdownButtonHideUnderline(
-                    child: Container(
-                      constraints:
-                      BoxConstraints(minHeight: 50),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                            color: Colors.grey,
-                            width: 0.2),
-                        borderRadius: BorderRadius.all(
-                            Radius.circular(5)),
-                        color: Colors.white,
-                      ),
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 10),
-                      child: DropdownButton(
-                        value: selectedBaseStationID,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedBaseStation =
-                                value.toString();
-                            selectedBaseStationID =
-                                int.parse(
-                                    value.toString());
-                            getBaseStationBranch(selectedBaseStationID);
-                          });
-
-
-
-                        },
-                        items: baseStationList
-                            .map((terminal) =>
-                            DropdownMenuItem(
-                              value: terminal.cityid,
-                              child: Column(
-                                mainAxisAlignment:
-                                MainAxisAlignment
-                                    .center,
-                                crossAxisAlignment:
-                                CrossAxisAlignment
-                                    .start,
-                                children: [
-                                  Text(
-                                    terminal.airportcode
-                                        .toUpperCase(),
-                                    style:
-                                    TextStyle(
-                                      fontSize: 18,
-                                      fontWeight:
-                                      FontWeight
-                                          .normal,
-                                      color: Colors
-                                          .black,
+              SizedBox(
+                height: 10,
+              ),
+              Row(
+                children: [
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width / 3.0,
+                    child: DropdownButtonHideUnderline(
+                      child: Container(
+                        constraints: BoxConstraints(minHeight: 50),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey, width: 0.2),
+                          borderRadius: BorderRadius.all(Radius.circular(5)),
+                          color: Colors.white,
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        child: DropdownButton(
+                          value: selectedBaseStationID,
+                          onChanged: (value) async {
+                            setState(() {
+                              selectedBaseStation = value.toString();
+                              selectedBaseStationID =
+                                  int.parse(value.toString());
+                              // getBaseStationBranch(selectedBaseStationID);
+                            });
+                            await changeValue();
+                            setState(() {});
+                          },
+                          items: baseStationList
+                              .map((terminal) => DropdownMenuItem(
+                                    value: terminal.cityid,
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          terminal.airportcode.toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.normal,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ))
-                            .toList(),
+                                  ))
+                              .toList(),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                SizedBox(
-                  width: 20,
-                ),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width/3.0,
-                  child: DropdownButtonHideUnderline(
-                    child: Container(
-                      constraints:
-                      BoxConstraints(minHeight: 50),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                            color: Colors.grey,
-                            width: 0.2),
-                        borderRadius: BorderRadius.all(
-                            Radius.circular(5)),
-                        color: Colors.white,
-                      ),
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 10),
-                      child: DropdownButton(
-                        value: selectedBaseStationBranchID,
-                        onChanged: (_value) {
-                          setState(() {
-                            selectedBaseStationBranch =
-                                _value.toString();
-                            selectedBaseStationBranchID =
-                                int.parse(
-                                    _value.toString());
-                          });
-                        },
-                        items: baseStationBranchList
-                            .map((value) =>
-                            DropdownMenuItem(
-                              value: value.organizationBranchId,
-                              child: Column(
-                                mainAxisAlignment:
-                                MainAxisAlignment
-                                    .center,
-                                crossAxisAlignment:
-                                CrossAxisAlignment
-                                    .start,
-                                children: [
-                                  Text(
-                                    value.orgBranchName,
-                                    style:
-                                    TextStyle(
-                                      fontSize: 18,
-                                      fontWeight:
-                                      FontWeight
-                                          .normal,
-                                      color: Colors
-                                          .black,
+                  SizedBox(
+                    width: 20,
+                  ),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width / 3.0,
+                    child: DropdownButtonHideUnderline(
+                      child: Container(
+                        constraints: BoxConstraints(minHeight: 50),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey, width: 0.2),
+                          borderRadius: BorderRadius.all(Radius.circular(5)),
+                          color: Colors.white,
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        child: DropdownButton(
+                          value: selectedBaseStationBranch,
+                          onChanged: (_value) {
+                            setState(() {
+                              selectedBaseStationBranch = _value.toString();
+                              // selectedBaseStationBranchID =
+                              //     int.parse(_value.toString());
+                            });
+                           print(selectedBaseStationBranch);
+                          },
+                          items: dummyList
+                              .map((value) => DropdownMenuItem(
+                                    value: value.orgBranchName,
+                                    child: Wrap(
+                                      // mainAxisAlignment:
+                                      //     MainAxisAlignment.center,
+                                      // crossAxisAlignment:
+                                      //     CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          value.orgBranchName.toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.normal,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ))
-                            .toList(),
+                                  ))
+                              .toList(),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],)
-
+                ],
+              )
             ],
-          );
-        },),
+          ),
+          // },),
 
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0, bottom: 16.0),
-            child: ElevatedButton(
-              //textColor: Colors.black,
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                elevation: 4.0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0)), //
-                padding: const EdgeInsets.all(0.0),
-              ),
-              child: Container(
-                height: 50,
-                width: 150,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: Colors.white,
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0, bottom: 16.0),
+              child: ElevatedButton(
+                //textColor: Colors.black,
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  elevation: 4.0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0)), //
+                  padding: const EdgeInsets.all(0.0),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: Text(
-                      'Clear',
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.normal,
-                          color: Color(0xFF11249F)),
+                child: Container(
+                  height: 50,
+                  width: 150,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.white,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Clear',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.normal,
+                            color: Color(0xFF11249F)),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0, bottom: 16.0),
-            child: ElevatedButton(
-              //textColor: Colors.black,
-              onPressed: () {
-                setState(() {});
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0, bottom: 16.0),
+              child: ElevatedButton(
+                //textColor: Colors.black,
+                onPressed: () {
+                  setState(() {});
 
-                Navigator.of(context).pop("y");
-              },
-              style: ElevatedButton.styleFrom(
-                elevation: 4.0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0)), //
-                padding: const EdgeInsets.all(0.0),
-              ),
-              child: Container(
-                height: 50,
-                width: 150,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  gradient: LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [
-                      Color(0xFF1220BC),
-                      Color(0xFF3540E8),
-                    ],
-                  ),
+                  Navigator.of(context).pop("y");
+                },
+                style: ElevatedButton.styleFrom(
+                  elevation: 4.0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0)), //
+                  padding: const EdgeInsets.all(0.0),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: Text(
-                      'Save',
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.normal,
-                          color: Colors.white),
+                child: Container(
+                  height: 50,
+                  width: 150,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    gradient: LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [
+                        Color(0xFF1220BC),
+                        Color(0xFF3540E8),
+                      ],
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Save',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      }),
     );
   }
+
   getTerminal() async {
     var queryParams = {'UserId': 0, 'OrganizationId': 0};
     await Global()
@@ -347,15 +340,15 @@ class _YardCheckInState extends State<YardCheckIn> {
       var resp = json.decode(msg).cast<Map<String, dynamic>>();
 
       baseStationList = resp
-          .map<WarehouseBaseStation>((json) => WarehouseBaseStation.fromJson(json))
+          .map<WarehouseBaseStation>(
+              (json) => WarehouseBaseStation.fromJson(json))
           .toList();
 
-      WarehouseBaseStation wt = new WarehouseBaseStation(airportcode: "Select",cityid: 0,organizationId: "",orgName: "");
+      WarehouseBaseStation wt = new WarehouseBaseStation(
+          airportcode: "Select", cityid: 0, organizationId: "", orgName: "");
       baseStationList.add(wt);
       baseStationList.sort((a, b) => a.cityid.compareTo(b.cityid));
-
       print("length baseStationList = " + baseStationList.length.toString());
-
       setState(() {
         isLoading = false;
       });
@@ -366,8 +359,12 @@ class _YardCheckInState extends State<YardCheckIn> {
       print(onError);
     });
   }
-  getBaseStationBranch(cityId) async{
-    var queryParams = { "CityId":cityId, "OrganizationId":0, "UserId": 0};
+
+  getBaseStationBranch(cityId) async {
+    baseStationBranchList = [];
+    dummyList = [];
+    selectedBaseStationBranchID = 0;
+    var queryParams = {"CityId": cityId, "OrganizationId": 0, "UserId": 0};
     await Global()
         .postData(
       Settings.SERVICES['GetBaseStationBranch'],
@@ -381,19 +378,24 @@ class _YardCheckInState extends State<YardCheckIn> {
       var resp = json.decode(msg).cast<Map<String, dynamic>>();
 
       baseStationBranchList = resp
-          .map<WarehouseBaseStationBranch>((json) => WarehouseBaseStationBranch.fromJson(json))
+          .map<WarehouseBaseStationBranch>(
+              (json) => WarehouseBaseStationBranch.fromJson(json))
           .toList();
 
-      WarehouseBaseStationBranch wt = new WarehouseBaseStationBranch(orgName: "",organizationId: 0,organizationBranchId: 0,orgBranchName: "Select");
+      WarehouseBaseStationBranch wt = new WarehouseBaseStationBranch(
+          orgName: "",
+          organizationId: 0,
+          organizationBranchId: 0,
+          orgBranchName: "Select");
+      baseStationBranchList.add(wt);
+      baseStationBranchList.sort(
+          (a, b) => a.organizationBranchId.compareTo(b.organizationBranchId));
 
-      baseStationBranchList.sort((a, b) => a.organizationBranchId.compareTo(b.organizationBranchId));
-
-      print("length baseStationList = " + baseStationBranchList.length.toString());
-
-
+      print("length baseStationList = " +
+          baseStationBranchList.length.toString());
+      print(baseStationBranchList.toString());
       setState(() {
         isLoading = false;
-
       });
     }).catchError((onError) {
       // setState(() {
@@ -402,6 +404,7 @@ class _YardCheckInState extends State<YardCheckIn> {
       print(onError);
     });
   }
+
   @override
   Widget build(BuildContext context) {
     var smallestDimension = MediaQuery.of(context).size.shortestSide;
@@ -450,7 +453,8 @@ class _YardCheckInState extends State<YardCheckIn> {
                         ],
                       ),
                     ),
-                    height: MediaQuery.of(context).size.height / 4, //180,
+                    height: MediaQuery.of(context).size.height / 4,
+                    //180,
                     alignment: Alignment.center,
 
                     child: Column(
@@ -635,55 +639,54 @@ class _YardCheckInState extends State<YardCheckIn> {
             //               ),
             //             ),
             //           )
-            //         : 
-                    
-                    
-                    Padding(
-                      padding: const EdgeInsets.only(top :32.0),
-                      child: Center(
-                          child: Wrap(
-                            alignment: WrapAlignment.center,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              SizedBox(height: 30),
-                              RequestTypeMenuBlock(
-                                  Color(0xFF4364F7),
-                                  Color(0xFFa8c0ff),
-                                  Icons.directions_walk,
-                                  "Just Arrived ?",
-                                  "Walk-in",
-                                  WalkInCustomer(),
-                                  useMobileLayout),
-                              RequestTypeMenuBlock(
-                                  Color(0xFF0052D4),
-                                  Color(0xFF9CECFB),
-                                  //Color(0xFF7F7FD5),
+            //         :
 
-                                  Icons.bookmark,
-                                  "Slot Booked ?",
-                                  "Yard Check-in",
-                                  CheckInYard(),
-                                  useMobileLayout),
-                              RequestTypeMenuBlock(
-                                  Color(0xFFf2709c),
-                                  Color(0xFFff9472),
-                                  Icons.qr_code,
-                                  "Have QR Code ?",
-                                  "Scan & Check-in",
-                                  ScanQRCode(),
-                                  useMobileLayout),
-                              // RequestTypeMenuBlock(
-                              //     Color(0xFFff4b1f), // Color(0xFF1A2980),
-                              //     Color(0xFFff9068),
-                              //     Icons.live_tv,
-                              //     "Dock Status ?",
-                              //     "View Live",
-                              //     LiveDockStatus(),
-                              //     useMobileLayout),
-                            ],
-                          ),
-                        ),
-                    )
+            Padding(
+              padding: const EdgeInsets.only(top: 32.0),
+              child: Center(
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    SizedBox(height: 30),
+                    RequestTypeMenuBlock(
+                        Color(0xFF4364F7),
+                        Color(0xFFa8c0ff),
+                        Icons.directions_walk,
+                        "Just Arrived ?",
+                        "Walk-in",
+                        WalkInCustomer(),
+                        useMobileLayout),
+                    RequestTypeMenuBlock(
+                        Color(0xFF0052D4),
+                        Color(0xFF9CECFB),
+                        //Color(0xFF7F7FD5),
+
+                        Icons.bookmark,
+                        "Slot Booked ?",
+                        "Yard Check-in",
+                        CheckInYard(),
+                        useMobileLayout),
+                    RequestTypeMenuBlock(
+                        Color(0xFFf2709c),
+                        Color(0xFFff9472),
+                        Icons.qr_code,
+                        "Have QR Code ?",
+                        "Scan & Check-in",
+                        ScanQRCode(),
+                        useMobileLayout),
+                    // RequestTypeMenuBlock(
+                    //     Color(0xFFff4b1f), // Color(0xFF1A2980),
+                    //     Color(0xFFff9068),
+                    //     Icons.live_tv,
+                    //     "Dock Status ?",
+                    //     "View Live",
+                    //     LiveDockStatus(),
+                    //     useMobileLayout),
+                  ],
+                ),
+              ),
+            )
           ],
         ),
       ),
@@ -903,9 +906,8 @@ class RequestTypeMenuBlock extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 height: kIsWeb ? 220 : MediaQuery.of(context).size.height / 3.8,
-                width: kIsWeb
-                    ? 220
-                    : MediaQuery.of(context).size.width / 2.8, //180,
+                width: kIsWeb ? 220 : MediaQuery.of(context).size.width / 2.8,
+                //180,
                 decoration: BoxDecoration(
                   //borderRadius: BorderRadius.circular(10),
                   borderRadius: BorderRadius.only(
