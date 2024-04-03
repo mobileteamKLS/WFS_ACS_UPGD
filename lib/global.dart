@@ -39,6 +39,7 @@ int selectedBaseStationID = 0;
 int selectedBaseStationBranchID = 0;
 List suspendedBY = [];
 List<WarehouseTerminals> terminalsList = [];
+List<WarehouseTerminals> terminalsListDDL = [];
 List<WarehouseBaseStation> baseStationList = [];
 List<WarehouseBaseStationBranch> baseStationBranchList = [];
 List<Vehicletypes> vehicletypesList = [];

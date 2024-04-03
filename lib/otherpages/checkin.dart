@@ -9,7 +9,9 @@ import '../constants.dart';
 import '../global.dart';
 
 class CheckInYard extends StatefulWidget {
-  CheckInYard({Key? key}) : super(key: key);
+  final String selectedBaseStationBranch;
+  final int selectedBaseStationBranchId;
+  CheckInYard({Key? key, required this.selectedBaseStationBranch, required this.selectedBaseStationBranchId}) : super(key: key);
 
   @override
   State<CheckInYard> createState() => _CheckInYardState();

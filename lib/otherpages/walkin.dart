@@ -11,7 +11,9 @@ import 'package:luxair/widgets/headers.dart';
 import '../constants.dart';
 
 class WalkInCustomer extends StatefulWidget {
-  WalkInCustomer({Key? key}) : super(key: key);
+  final String selectedBaseStationBranch;
+  final int selectedBaseStationBranchId;
+  WalkInCustomer({Key? key,required this.selectedBaseStationBranch,required this.selectedBaseStationBranchId}) : super(key: key);
 
   @override
   State<WalkInCustomer> createState() => _WalkInCustomerState();
@@ -227,8 +229,8 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
 
                             hint: Text("---- Select ----",
                                 style: iPadYellowTextFontStyleBold),
-                            value: selectedTerminalID,
-                            items: terminalsList.map((terminal) {
+                            value: terminalsListDDL[0].custudian,
+                            items: terminalsListDDL.map((terminal) {
                               return DropdownMenuItem(
                                 child: Text(terminal.custodianName,
                                     style: iPadTextFontStyle), //label of item
@@ -236,11 +238,11 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                               );
                             }).toList(),
                             onChanged: (value) {
-                              setState(() {
-                                selectedTerminal = value.toString();
-                                selectedTerminalID =
-                                    int.parse(value.toString());
-                              });
+                              // setState(() {
+                              //   selectedTerminal = value.toString();
+                              //   selectedTerminalID =
+                              //       int.parse(value.toString());
+                              // });
                             },
                           ),
                         ),
