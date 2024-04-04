@@ -41,6 +41,7 @@ List suspendedBY = [];
 List<WarehouseTerminals> terminalsList = [];
 List<WarehouseTerminals> terminalsListDDL = [];
 List<WarehouseBaseStation> baseStationList = [];
+List<WarehouseBaseStationTrucker> baseStationList2 = [];
 List<WarehouseBaseStationBranch> baseStationBranchList = [];
 List<Vehicletypes> vehicletypesList = [];
 List<DamageType> damageTypeList = [];

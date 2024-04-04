@@ -14,9 +14,9 @@ import '../constants.dart';
 import '../global.dart';
 
 class WalkInLiveDockStatus extends StatefulWidget {
-  final String selectedBaseStationBranch;
-  final int selectedBaseStationBranchId;
-  WalkInLiveDockStatus({Key? key,required this.selectedBaseStationBranch,required this.selectedBaseStationBranchId}) : super(key: key);
+  WalkInLiveDockStatus({
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<WalkInLiveDockStatus> createState() => _WalkInLiveDockStatusState();
@@ -299,24 +299,20 @@ class _WalkInLiveDockStatusState extends State<WalkInLiveDockStatus> {
                                   hint: Text("---- Select ----",
                                       style: iPadYellowTextFontStyleBold),
 
-                                  value: widget.selectedBaseStationBranch,
-                                  items: [
-                                    DropdownMenuItem(
-                                      value: widget.selectedBaseStationBranch,
-                                      child: Text(
-                                          widget.selectedBaseStationBranch
-                                              .toUpperCase(),
-                                          style: useMobileLayout
-                                              ? mobileTextFontStyle
-                                              : iPadTextFontStyle),
-                                    ),
-                                  ],
+                                  value: terminalsListDDL[0].custudian,
+                                  items: terminalsListDDL.map((terminal) {
+                                    return DropdownMenuItem(
+                                      child: Text(terminal.custodianName,
+                                          style: iPadTextFontStyle), //label of item
+                                      value: terminal.custudian, //value of item
+                                    );
+                                  }).toList(),
                                   onChanged: (value) {
-                                    setState(() {
-                                      selectedTerminal = value.toString();
-                                      selectedTerminalID =
-                                          int.parse(value.toString());
-                                    });
+                                    // setState(() {
+                                    //   // selectedTerminal = value.toString();
+                                    //   // selectedTerminalID =
+                                    //   //     int.parse(value.toString());
+                                    // });
                                   },
                                 ),
                               ),
@@ -368,23 +364,19 @@ class _WalkInLiveDockStatusState extends State<WalkInLiveDockStatus> {
                                   hint: Text("---- Select ----",
                                       style: iPadYellowTextFontStyleBold),
                                   dropdownColor: Colors.white,
-                                  value: widget.selectedBaseStationBranch,
-                                  items: [
-                                    DropdownMenuItem(
-                                      value: widget.selectedBaseStationBranch,
-                                      child: Text(
-                                          widget.selectedBaseStationBranch
-                                              .toUpperCase(),
-                                          style: useMobileLayout
-                                              ? mobileTextFontStyle
-                                              : iPadTextFontStyle),
-                                    ),
-                                  ],
+                                  value: terminalsListDDL[0].custudian,
+                                  items: terminalsListDDL.map((terminal) {
+                                    return DropdownMenuItem(
+                                      child: Text(terminal.custodianName,
+                                          style: iPadTextFontStyle), //label of item
+                                      value: terminal.custudian, //value of item
+                                    );
+                                  }).toList(),
                                   onChanged: (value) {
                                     setState(() {
-                                      selectedTerminal = value.toString();
-                                      selectedTerminalID =
-                                          int.parse(value.toString());
+                                      // selectedTerminal = value.toString();
+                                      // selectedTerminalID =
+                                      //     int.parse(value.toString());
                                     });
                                   },
                                   // isExpanded: true,
@@ -2334,117 +2326,117 @@ class _WalkInLiveDockStatusState extends State<WalkInLiveDockStatus> {
                             color: Color(0xFF0461AA),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () async {
-                            print("avlDockList.length === " +
-                                avlDockList.length.toString());
-
-                            if (avlDockList.isNotEmpty) {
-                              await getDocksToUpdate(
-                                  modeSelected == 1 ? "2" : "1");
-
-                              if (!isSavingData) {
-                                if (vehicleAndDocksList.isEmpty) {
-                                } else {
-                                  var newDockSelected = await showDialog(
-                                    context: context,
-                                    barrierDismissible: false,
-                                    builder: (BuildContext context) {
-                                      return UpdateDockDialog(
-                                        isMobile: useMobileLayout,
-                                        dockname: "",
-                                        vtnum: qsl.TOKENNO,
-                                        vehicleAndDocksList:
-                                        vehicleAndDocksList,
-                                        isAssign: true,
-                                      );
-                                    },
-                                  );
-                                  print("newDockSelected");
-                                  print(newDockSelected);
-                                  if (newDockSelected != null) {
-                                    var submitCheckin =
-                                    await submitForDockUpdate(
-                                      "Update",
-                                      qsl.TOKENNO,
-                                      modeSelected == 1 ? "2" : "1",
-                                      newDockSelected.toString(),
-                                      "",
-                                    );
-                                    print(submitCheckin);
-                                    if (submitCheckin == true) {
-                                      var dlgstatus = await showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) =>
-                                            CustomDialog(
-                                              title: qsl.TOKENNO,
-                                              description: "Dock " +
-                                                  newDockSelected +
-                                                  " has been assigned to VT# " +
-                                                  qsl.TOKENNO +
-                                                  " successfully",
-                                              buttonText: "Okay",
-                                              imagepath:
-                                              'assets/images/successchk.gif',
-                                              isMobile: useMobileLayout,
-                                            ),
-                                      );
-                                      if (dlgstatus == true) {
-                                        setState(() {
-                                          refreshList();
-                                        }); // To close the form
-                                      }
-                                    } else {
-                                      showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) =>
-                                            customAlertMessageDialog(
-                                                title: errMsgText == ""
-                                                    ? "Error Occured"
-                                                    : "Dock Assign Failed",
-                                                description: errMsgText ==
-                                                    ""
-                                                    ? "Error occured while Assigning Dock, Please try again after some time"
-                                                    : errMsgText,
-                                                buttonText: "Okay",
-                                                imagepath:
-                                                'assets/images/warn.gif',
-                                                isMobile:
-                                                useMobileLayout),
-                                      );
-                                    }
-                                  }
-                                }
-                              }
-                            } else {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) =>
-                                    customAlertMessageDialog(
-                                        title: "Assign Failed",
-                                        description:
-                                        "No Docks Available at the moment to Assign",
-                                        buttonText: "Okay",
-                                        imagepath:
-                                        'assets/images/warn.gif',
-                                        isMobile: useMobileLayout),
-                              );
-                            }
-                          },
-                          child: Container(
-                            height: useMobileLayout ? 48 : 60, //60,
-                            width: useMobileLayout ? 48 : 60, //60,
-                            decoration: BoxDecoration(
-                                color: Color(0xFF11249F),
-                                shape: BoxShape.circle),
-                            child: Center(
-                                child: Icon(
-                                  Icons.assignment,
-                                  color: Colors.white,
-                                  size: 32,
-                                )),
-                          ),
-                        ),
+                        // GestureDetector(
+                        //   onTap: () async {
+                        //     print("avlDockList.length === " +
+                        //         avlDockList.length.toString());
+                        //
+                        //     if (avlDockList.isNotEmpty) {
+                        //       await getDocksToUpdate(
+                        //           modeSelected == 1 ? "2" : "1");
+                        //
+                        //       if (!isSavingData) {
+                        //         if (vehicleAndDocksList.isEmpty) {
+                        //         } else {
+                        //           var newDockSelected = await showDialog(
+                        //             context: context,
+                        //             barrierDismissible: false,
+                        //             builder: (BuildContext context) {
+                        //               return UpdateDockDialog(
+                        //                 isMobile: useMobileLayout,
+                        //                 dockname: "",
+                        //                 vtnum: qsl.TOKENNO,
+                        //                 vehicleAndDocksList:
+                        //                     vehicleAndDocksList,
+                        //                 isAssign: true,
+                        //               );
+                        //             },
+                        //           );
+                        //           print("newDockSelected");
+                        //           print(newDockSelected);
+                        //           if (newDockSelected != null) {
+                        //             var submitCheckin =
+                        //                 await submitForDockUpdate(
+                        //               "Update",
+                        //               qsl.TOKENNO,
+                        //               modeSelected == 1 ? "2" : "1",
+                        //               newDockSelected.toString(),
+                        //               "",
+                        //             );
+                        //             print(submitCheckin);
+                        //             if (submitCheckin == true) {
+                        //               var dlgstatus = await showDialog(
+                        //                 context: context,
+                        //                 builder: (BuildContext context) =>
+                        //                     CustomDialog(
+                        //                   title: qsl.TOKENNO,
+                        //                   description: "Dock " +
+                        //                       newDockSelected +
+                        //                       " has been assigned to VT# " +
+                        //                       qsl.TOKENNO +
+                        //                       " successfully",
+                        //                   buttonText: "Okay",
+                        //                   imagepath:
+                        //                       'assets/images/successchk.gif',
+                        //                   isMobile: useMobileLayout,
+                        //                 ),
+                        //               );
+                        //               if (dlgstatus == true) {
+                        //                 setState(() {
+                        //                   refreshList();
+                        //                 }); // To close the form
+                        //               }
+                        //             } else {
+                        //               showDialog(
+                        //                 context: context,
+                        //                 builder: (BuildContext context) =>
+                        //                     customAlertMessageDialog(
+                        //                         title: errMsgText == ""
+                        //                             ? "Error Occured"
+                        //                             : "Dock Assign Failed",
+                        //                         description: errMsgText ==
+                        //                                 ""
+                        //                             ? "Error occured while Assigning Dock, Please try again after some time"
+                        //                             : errMsgText,
+                        //                         buttonText: "Okay",
+                        //                         imagepath:
+                        //                             'assets/images/warn.gif',
+                        //                         isMobile:
+                        //                             useMobileLayout),
+                        //               );
+                        //             }
+                        //           }
+                        //         }
+                        //       }
+                        //     } else {
+                        //       showDialog(
+                        //         context: context,
+                        //         builder: (BuildContext context) =>
+                        //             customAlertMessageDialog(
+                        //                 title: "Assign Failed",
+                        //                 description:
+                        //                     "No Docks Available at the moment to Assign",
+                        //                 buttonText: "Okay",
+                        //                 imagepath:
+                        //                     'assets/images/warn.gif',
+                        //                 isMobile: useMobileLayout),
+                        //       );
+                        //     }
+                        //   },
+                        //   child: Container(
+                        //     height: useMobileLayout ? 48 : 60, //60,
+                        //     width: useMobileLayout ? 48 : 60, //60,
+                        //     decoration: BoxDecoration(
+                        //         color: Color(0xFF11249F),
+                        //         shape: BoxShape.circle),
+                        //     child: Center(
+                        //         child: Icon(
+                        //       Icons.assignment,
+                        //       color: Colors.white,
+                        //       size: 32,
+                        //     )),
+                        //   ),
+                        // ),
                       ]),
                   Padding(
                     padding: const EdgeInsets.only(top: 5.0, bottom: 8.0),
@@ -2735,9 +2727,10 @@ class _WalkInLiveDockStatusState extends State<WalkInLiveDockStatus> {
     });
 
     var queryParams = {
-      "OperationType": modeType.toString(), // "",
-      "strGHAId":
-      widget.selectedBaseStationBranchId.toString(), // loggedinUser.OrganizationBranchId,
+      "OperationType": modeType.toString(),
+      // "",
+      "strGHAId": terminalsListDDL[0].custudian.toString(),
+      // loggedinUser.OrganizationBranchId,
     };
 
     await Global()
@@ -3038,8 +3031,8 @@ class _WalkInLiveDockStatusState extends State<WalkInLiveDockStatus> {
 
     var queryParams = {
       "OperationType": modeType.toString(),
-      "strGHAId":
-      widget.selectedBaseStationBranchId.toString(), // loggedinUser.OrganizationBranchId,
+      "strGHAId": terminalsListDDL[0].custudian.toString(),
+      // loggedinUser.OrganizationBranchId,
     };
     await Global()
         .postData(

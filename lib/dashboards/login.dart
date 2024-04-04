@@ -480,6 +480,7 @@ class _LoginPageState extends State<LoginPage> {
                                     await getVehicleTypesList();
                                     await getVehicleNoList();
                                     await getDriversList();
+                                    await getBaseStation();
 
                                     if (isGHA) {
                                       await getDamageTypeList();
@@ -769,6 +770,8 @@ class _LoginPageState extends State<LoginPage> {
           await getVehicleTypesList();
           await getVehicleNoList();
           await getDriversList();
+          await getBaseStation();
+          print("object-------");
           if (isGHA) {
             await getDamageTypeList();
             await getAcceptanceResonList();
@@ -1324,6 +1327,49 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         isLoading = false;
       });
+      print(onError);
+    });
+  }
+
+  getBaseStation() async {
+    if (isLoading) return;
+    setState(() {
+      isLoading = true;
+    });
+    var queryParams = {
+      'UserId': loggedinUser.CreatedByUserId,
+      'OrganizationId': loggedinUser.OrganizationId
+    };
+    await Global()
+        .postData(
+      Settings.SERVICES['GetBaseStation'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+
+      var msg = json.decode(response.body)['d'];
+      var resp = json.decode(msg).cast<Map<String, dynamic>>();
+
+      baseStationList2 = resp
+          .map<WarehouseBaseStationTrucker>(
+              (json) => WarehouseBaseStationTrucker.fromJson(json))
+          .toList();
+      WarehouseBaseStationTrucker wt = new WarehouseBaseStationTrucker(
+          airportcode: "Select", cityid: 0, organizationId: 0, orgName: "");
+      baseStationList2.add(wt);
+      baseStationList2.sort((a, b) => a.cityid.compareTo(b.cityid));
+
+      print("length baseStationList = " + baseStationList2.length.toString());
+
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
       print(onError);
     });
   }

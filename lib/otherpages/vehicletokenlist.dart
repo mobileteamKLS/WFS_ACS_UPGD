@@ -227,7 +227,7 @@ class _VehicleTokenListState extends State<VehicleTokenList> {
 
     var queryParams = {
       "OperationType": modeType.toString(), // "",
-      "OrganizationBranchId": selectedTerminalID,// loggedinUser.OrganizationBranchId,
+      "OrganizationBranchId": selectedBaseStationBranchID,//selectedTerminalID,// loggedinUser.OrganizationBranchId,
     };
     await Global()
         .postData(

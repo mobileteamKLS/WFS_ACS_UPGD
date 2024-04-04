@@ -135,6 +135,7 @@ class vehicleSMS {
   final String SMSDate;
   final String SMSMessage;
   final String MobileNo;
+
   vehicleSMS({
     required this.SMSDate,
     required this.SMSMessage,
@@ -163,6 +164,7 @@ class VehicleShipmentDetails {
   final String TokenNo;
   final String Status;
   final String Reason;
+
   VehicleShipmentDetails({
     required this.AWBNo,
     required this.TokenNo,
@@ -193,6 +195,7 @@ class VehicleTrackingDetails {
   final String Name;
   final String Status;
   final String VehicleDateTime;
+
   VehicleTrackingDetails({
     required this.Name,
     required this.Status,
@@ -527,19 +530,20 @@ class PODAWB {
 class WarehouseTerminals {
   final int custudian;
   final String custodianName;
- final bool iswalkinEnable;
+  final bool iswalkinEnable;
+
   WarehouseTerminals({
     required this.custudian,
     required this.custodianName,
     required this.iswalkinEnable,
-
   });
 
   factory WarehouseTerminals.fromJson(Map<String, dynamic> json) {
     return WarehouseTerminals(
       custodianName: json['CustodianName'] == null ? "" : json['CustodianName'],
       custudian: json['CUSTODIAN'] == null ? 0 : json['CUSTODIAN'],
-      iswalkinEnable: json['IswalkinEnable'] == null ? 0 : json['IswalkinEnable'],
+      iswalkinEnable:
+          json['IswalkinEnable'] == null ? 0 : json['IswalkinEnable'],
     );
   }
 
@@ -570,19 +574,51 @@ class WarehouseBaseStation {
     required this.airportcode,
   });
 
-  factory WarehouseBaseStation.fromJson(Map<String, dynamic> json) => WarehouseBaseStation(
-    organizationId: json["OrganizationId"]== null ? "" :json["OrganizationId"],
-    orgName: json["OrgName"]== null ? "" :json["OrgName"],
-    cityid: json["cityid"]== null ? 0 :json["cityid"],
-    airportcode: json["airportcode"]== null ? "" :json["airportcode"],
-  );
+  factory WarehouseBaseStation.fromJson(Map<String, dynamic> json) =>
+      WarehouseBaseStation(
+        organizationId:
+            json["OrganizationId"] == null ? "" : json["OrganizationId"],
+        orgName: json["OrgName"] == null ? "" : json["OrgName"],
+        cityid: json["cityid"] == null ? 0 : json["cityid"],
+        airportcode: json["airportcode"] == null ? "" : json["airportcode"],
+      );
 
   Map<String, dynamic> toMap() => {
-    "OrganizationId": organizationId,
-    "OrgName": orgName,
-    "cityid": cityid,
-    "airportcode": airportcode,
-  };
+        "OrganizationId": organizationId,
+        "OrgName": orgName,
+        "cityid": cityid,
+        "airportcode": airportcode,
+      };
+}
+
+class WarehouseBaseStationTrucker {
+  int organizationId;
+  String orgName;
+  int cityid;
+  String airportcode;
+
+  WarehouseBaseStationTrucker({
+    required this.organizationId,
+    required this.orgName,
+    required this.cityid,
+    required this.airportcode,
+  });
+
+  factory WarehouseBaseStationTrucker.fromJson(Map<String, dynamic> json) =>
+      WarehouseBaseStationTrucker(
+        organizationId:
+            json["OrganizationId"] == null ? 0 : json["OrganizationId"],
+        orgName: json["OrgName"] == null ? "" : json["OrgName"],
+        cityid: json["cityid"] == null ? 0 : json["cityid"],
+        airportcode: json["airportcode"] == null ? "" : json["airportcode"],
+      );
+
+  Map<String, dynamic> toMap() => {
+        "OrganizationId": organizationId,
+        "OrgName": orgName,
+        "cityid": cityid,
+        "airportcode": airportcode,
+      };
 }
 
 class WarehouseBaseStationBranch {

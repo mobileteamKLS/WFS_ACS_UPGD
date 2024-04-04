@@ -687,7 +687,7 @@ class _YardCheckInState extends State<YardCheckIn> {
                         Icons.directions_walk,
                         "Just Arrived ?",
                         "Walk-in",
-                        WalkInCustomer(selectedBaseStationBranch:selectedBaseStationBranch,selectedBaseStationBranchId:custodianId ),
+                        WalkInCustomer(),
                         useMobileLayout,
                         isWalkInEnable),
                     RequestTypeMenuBlock(
@@ -698,7 +698,7 @@ class _YardCheckInState extends State<YardCheckIn> {
                         Icons.bookmark,
                         "Slot Booked ?",
                         "Yard Check-in",
-                        CheckInYard(selectedBaseStationBranch:selectedBaseStationBranch,selectedBaseStationBranchId:custodianId ),
+                        CheckInYard(),
                         useMobileLayout,
                         true),
                     RequestTypeMenuBlock(
@@ -716,7 +716,7 @@ class _YardCheckInState extends State<YardCheckIn> {
                         Icons.live_tv,
                         "Dock Status ?",
                         "View Live",
-                        WalkInLiveDockStatus(selectedBaseStationBranch:selectedBaseStationBranch,selectedBaseStationBranchId:custodianId ),
+                        WalkInLiveDockStatus(),
                         useMobileLayout,
                         true),
                     // RequestTypeMenuBlock(
