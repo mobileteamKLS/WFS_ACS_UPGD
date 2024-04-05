@@ -8,6 +8,7 @@ import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 // import 'package:shared_preferences/shared_preferences.dart';
 import 'package:luxair/dashboards/login.dart';
 import 'package:luxair/datastructure/userdetails.dart';
@@ -66,11 +67,46 @@ class _DashboardsState extends State<Dashboards> {
     super.dispose();
   }
 
+  bool isTerminalSelected() {
+    if (selectedBaseStationID == 0 || selectedBaseStationBranchID == 0) {
+
+      return false;
+    }
+    return true;
+  }
+
+  void _showAlertDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Alert Dialog Title'),
+          content: const Text('This is the content of the alert dialog.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Confirm'),
+              onPressed: () {
+                // Handle the confirm action
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void getCurrentDateTime() {
     setState(() {
       printDate = DateFormat('dd-MMM-yyyy hh:mm').format(DateTime.now());
     });
   }
+
   changeValue() async {
     await getBaseStationBranch(selectedBaseStationID);
     print("******* ${baseStationBranchList.toString()} ********");
@@ -78,6 +114,7 @@ class _DashboardsState extends State<Dashboards> {
       dummyList = baseStationBranchList;
     });
   }
+
   getBaseStationBranch(cityId) async {
     baseStationBranchList = [];
     dummyList = [];
@@ -108,14 +145,12 @@ class _DashboardsState extends State<Dashboards> {
           orgBranchName: "Select");
       baseStationBranchList.add(wt);
       baseStationBranchList.sort(
-              (a, b) => a.organizationBranchId.compareTo(b.organizationBranchId));
+          (a, b) => a.organizationBranchId.compareTo(b.organizationBranchId));
 
       print("length baseStationList = " +
           baseStationBranchList.length.toString());
       print(baseStationBranchList.toString());
-      setState(() {
-
-      });
+      setState(() {});
     }).catchError((onError) {
       // setState(() {
       //   isLoading = false;
@@ -789,7 +824,9 @@ class _DashboardsState extends State<Dashboards> {
                   ),
                   Row(
                     children: [
-                      SizedBox(width: 6,),
+                      SizedBox(
+                        width: 6,
+                      ),
                       SizedBox(
                         width: MediaQuery.of(context).size.width / 2.1,
                         child: Center(
@@ -813,6 +850,7 @@ class _DashboardsState extends State<Dashboards> {
                                     selectedBaseStationID =
                                         int.parse(value.toString());
                                     // getBaseStationBranch(selectedBaseStationID);
+                                    print(";;;;$selectedBaseStationID;;;");
                                   });
                                   await changeValue();
                                   setState(() {});
@@ -844,7 +882,9 @@ class _DashboardsState extends State<Dashboards> {
                           ),
                         ),
                       ),
-                      SizedBox(width: 8,),
+                      SizedBox(
+                        width: 8,
+                      ),
                       SizedBox(
                         width: MediaQuery.of(context).size.width / 2.1,
                         child: Center(
@@ -853,9 +893,9 @@ class _DashboardsState extends State<Dashboards> {
                               constraints: BoxConstraints(minHeight: 50),
                               decoration: BoxDecoration(
                                 border:
-                                Border.all(color: Colors.grey, width: 0.2),
+                                    Border.all(color: Colors.grey, width: 0.2),
                                 borderRadius:
-                                BorderRadius.all(Radius.circular(5)),
+                                    BorderRadius.all(Radius.circular(5)),
                                 color: Colors.white,
                               ),
                               padding: EdgeInsets.symmetric(horizontal: 10),
@@ -873,27 +913,27 @@ class _DashboardsState extends State<Dashboards> {
                                   });
                                   // print(selectedBaseStationBranch);
                                 },
-                                items:
-                                dummyList
+                                items: dummyList
                                     .map((value) => DropdownMenuItem(
-                                  value: value.organizationBranchId,
-                                  child: Wrap(
-                                    // mainAxisAlignment:
-                                    //     MainAxisAlignment.center,
-                                    // crossAxisAlignment:
-                                    //     CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        value.orgBranchName.toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.normal,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ))
+                                          value: value.organizationBranchId,
+                                          child: Wrap(
+                                            // mainAxisAlignment:
+                                            //     MainAxisAlignment.center,
+                                            // crossAxisAlignment:
+                                            //     CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                value.orgBranchName
+                                                    .toUpperCase(),
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.normal,
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ))
                                     .toList(),
                               ),
                             ),
@@ -918,7 +958,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Dock",
                       "In",
                       DockIn(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      false),
                 if (isGHA)
                   DashboardBlocks(
                       Color(0xFFa8c0ff),
@@ -927,7 +968,8 @@ class _DashboardsState extends State<Dashboards> {
                       "W/H",
                       "Acceptance",
                       WarehouseAcceptanceList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
                 if (isGHA)
                   DashboardBlocks(
                       Color(0xFFa8c0ff),
@@ -936,7 +978,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Record",
                       "POD",
                       RecordPodList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
                 if (isGHA)
                   DashboardBlocks(
                       Color(0xFFff9472),
@@ -945,7 +988,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Dock",
                       "Out",
                       DockOut(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
                 if (isGHA)
                   DashboardBlocks(
                       Color(0xFFa8c0ff),
@@ -954,7 +998,8 @@ class _DashboardsState extends State<Dashboards> {
                       "View Live",
                       "Dock Status",
                       LiveDockStatus(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
                 if (isTrucker || isTruckerFF)
                   DashboardBlocks(
                       Color(0xFFff9472),
@@ -963,7 +1008,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Yard",
                       "Check-in",
                       TruckYardCheckInList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
                 if (isTrucker || isTruckerFF)
                   DashboardBlocks(
                       Color(0xFFa8c0ff),
@@ -972,7 +1018,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Vehicle Token",
                       "List",
                       VehicleTokenList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
 
                 if (isTrucker || isTruckerFF)
                   DashboardBlocks(
@@ -982,7 +1029,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Vehicle",
                       "Movement Tracking",
                       VehicleMovementTrackingList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
 
                 if (isTrucker || isTruckerFF)
                   DashboardBlocks(
@@ -992,7 +1040,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Book",
                       "Slot",
                       SlotsList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
 
                 if (isTrucker || isTruckerFF)
                   DashboardBlocks(
@@ -1002,7 +1051,8 @@ class _DashboardsState extends State<Dashboards> {
                       "View",
                       "Booked Slots",
                       BookedSlotsList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
 
                 if (isTPS)
                   DashboardBlocks(
@@ -1012,7 +1062,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Cargo",
                       "Pick-up",
                       CArgoPickUp(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      true),
 
                 if (isTPS)
                   DashboardBlocks(
@@ -1022,7 +1073,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Cargo",
                       "Drop",
                       CargoDrop(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      true),
                 // DashboardBlocks(
                 //     Color(0xFF9CECFB),
                 //     Color(0xFF0052D4),
@@ -1038,7 +1090,8 @@ class _DashboardsState extends State<Dashboards> {
                     "",
                     "Feedback",
                     AppFeedback(),
-                    useMobileLayout),
+                    useMobileLayout,
+                    true),
                 // Padding(
                 //   padding: const EdgeInsets.only(
                 //       left: 40.0, right: 10.0, top: 32),
@@ -1208,7 +1261,7 @@ class _DashboardsState extends State<Dashboards> {
 
 class DashboardBlocks extends StatelessWidget {
   DashboardBlocks(this.color1, this.color2, this.lblicon, this.btnText1,
-      this.btnText2, this.pageroute, this.isMobile);
+      this.btnText2, this.pageroute, this.isMobile, this.isEnabled);
 
   final Color color1;
   final Color color2;
@@ -1217,6 +1270,7 @@ class DashboardBlocks extends StatelessWidget {
   final String btnText2;
   final pageroute;
   final bool isMobile;
+  final bool isEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -1233,10 +1287,12 @@ class DashboardBlocks extends StatelessWidget {
                     alignment: Alignment.bottomCenter,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => pageroute),
-                        );
+                        if (isEnabled) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => pageroute),
+                          );
+                        }
                       },
                       //padding: const EdgeInsets.all(0.0),
                       style: ElevatedButton.styleFrom(
@@ -1321,10 +1377,12 @@ class DashboardBlocks extends StatelessWidget {
                       alignment: Alignment.center,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => pageroute),
-                          );
+                          if (isEnabled) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => pageroute),
+                            );
+                          }
                         },
                         //padding: const EdgeInsets.all(0.0),
                         style: ElevatedButton.styleFrom(
@@ -1409,11 +1467,12 @@ class DashboardBlocks extends StatelessWidget {
                         alignment: Alignment.bottomCenter,
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => pageroute),
-                            );
+                            if (isEnabled) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => pageroute),
+                              );
+                            }
                           },
                           //padding: const EdgeInsets.all(0.0),
                           style: ElevatedButton.styleFrom(
