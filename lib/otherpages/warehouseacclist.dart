@@ -210,7 +210,7 @@ class _WarehouseAcceptanceListState extends State<WarehouseAcceptanceList> {
     var queryParams = {
       "OperationType": modeType.toString(), // "",
       "OrganizationBranchId":
-          selectedTerminalID, // loggedinUser.OrganizationBranchId,
+      selectedBaseStationBranchID, // loggedinUser.OrganizationBranchId,
     };
     await Global()
         .postData(

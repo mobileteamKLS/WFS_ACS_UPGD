@@ -28,6 +28,7 @@ import 'package:luxair/widgets/customdialogue.dart';
 import 'package:luxair/widgets/headers.dart';
 import '../constants.dart';
 import '../datastructure/vehicletoken.dart';
+import '../widgets/common.dart';
 import 'homescreen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -69,36 +70,9 @@ class _DashboardsState extends State<Dashboards> {
 
   bool isTerminalSelected() {
     if (selectedBaseStationID == 0 || selectedBaseStationBranchID == 0) {
-
       return false;
     }
     return true;
-  }
-
-  void _showAlertDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Alert Dialog Title'),
-          content: const Text('This is the content of the alert dialog.'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Confirm'),
-              onPressed: () {
-                // Handle the confirm action
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void getCurrentDateTime() {
@@ -959,7 +933,7 @@ class _DashboardsState extends State<Dashboards> {
                       "In",
                       DockIn(),
                       useMobileLayout,
-                      false),
+                      isTerminalSelected()),
                 if (isGHA)
                   DashboardBlocks(
                       Color(0xFFa8c0ff),
@@ -1272,6 +1246,32 @@ class DashboardBlocks extends StatelessWidget {
   final bool isMobile;
   final bool isEnabled;
 
+  void _showAlertDialog(BuildContext context, String msg) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Alert Dialog Title'),
+          content: Text(msg),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Confirm'),
+              onPressed: () {
+                // Handle the confirm action
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return kIsWeb
@@ -1380,8 +1380,20 @@ class DashboardBlocks extends StatelessWidget {
                           if (isEnabled) {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => pageroute),
+                              MaterialPageRoute(
+                                  builder: (context) => pageroute),
                             );
+                          }
+                          if (selectedBaseStationID == 0) {
+                            showAlertDialog(
+                                context, "Ok", "Alert", "Select Base Station");
+                            print("base");
+                            return;
+                          }
+                          if (selectedBaseStationBranchID == 0) {
+                            showAlertDialog(
+                                context, "Ok", "Alert", "Select Terminal");
+                            print("terminal");
                           }
                         },
                         //padding: const EdgeInsets.all(0.0),
@@ -1470,8 +1482,20 @@ class DashboardBlocks extends StatelessWidget {
                             if (isEnabled) {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => pageroute),
+                                MaterialPageRoute(
+                                    builder: (context) => pageroute),
                               );
+                            }
+                            if (selectedBaseStationID == 0) {
+                              showAlertDialog(context, "Ok", "Alert",
+                                  "Select Base Station");
+                              print("base");
+                              return;
+                            }
+                            if (selectedBaseStationBranchID == 0) {
+                              showAlertDialog(
+                                  context, "Ok", "Alert", "Select Terminal");
+                              print("terminal");
                             }
                           },
                           //padding: const EdgeInsets.all(0.0),
