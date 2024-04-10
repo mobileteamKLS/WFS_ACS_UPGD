@@ -680,7 +680,7 @@ class _TruckYardCheckInDetailsState extends State<TruckYardCheckInDetails> {
         "pDOCK_OUT": dockout,
         "CreatedByUserId": loggedinUser.CreatedByUserId,
         "OrganizationBranchId":
-            selectedTerminalID, //  loggedinUser.OrganizationBranchId,
+        selectedBaseStationBranchID,//selectedTerminalID, //  loggedinUser.OrganizationBranchId,
         "OrganizationId": loggedinUser.OrganizationId,
         "IsGeoFencing": "true",
       };

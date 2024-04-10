@@ -59,6 +59,8 @@ class _DashboardsState extends State<Dashboards> {
     // Timer.periodic(Duration(seconds:1), (Timer t)=>getCurrentDateTime());
     _timer = new Timer.periodic(
         Duration(seconds: 1), (Timer timer) => getCurrentDateTime());
+    selectedBaseStationBranchID=0;
+    selectedBaseStationID=0;
     super.initState();
   }
 
@@ -94,7 +96,7 @@ class _DashboardsState extends State<Dashboards> {
     dummyList = [];
     selectedBaseStationBranchID = 0;
     selectedBaseStationBranch = "Select";
-    var queryParams = {"CityId": cityId, "OrganizationId": 0, "UserId": 0};
+    var queryParams = {"CityId": cityId, "OrganizationId": loggedinUser.OrganizationId.toString(), "UserId": loggedinUser.CreatedByUserId.toString()};
     await Global()
         .postData(
       Settings.SERVICES['GetBaseStationBranch'],

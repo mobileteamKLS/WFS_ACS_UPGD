@@ -184,27 +184,27 @@ class _YardCheckInState extends State<YardCheckIn> {
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF11249F),
                       )),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Container(
-                      height: 48,
-                      width: 48,
-                      decoration: BoxDecoration(
-                          border: Border.all(
-                            width: 2,
-                            color: Colors.white,
-                          ),
-                          color: Colors.red,
-                          shape: BoxShape.circle),
-                      child: Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 40,
-                      ),
-                    ),
-                  ),
+                  // GestureDetector(
+                  //   onTap: () {
+                  //     Navigator.of(context).pop();
+                  //   },
+                  //   child: Container(
+                  //     height: 48,
+                  //     width: 48,
+                  //     decoration: BoxDecoration(
+                  //         border: Border.all(
+                  //           width: 2,
+                  //           color: Colors.white,
+                  //         ),
+                  //         color: Colors.red,
+                  //         shape: BoxShape.circle),
+                  //     child: Icon(
+                  //       Icons.close,
+                  //       color: Colors.white,
+                  //       size: 40,
+                  //     ),
+                  //   ),
+                  // ),
                   // ),
                 ],
               ),
@@ -387,13 +387,16 @@ class _YardCheckInState extends State<YardCheckIn> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(right: 16.0, bottom: 16.0),
+                  padding: const EdgeInsets.only(right: 8.0, bottom: 16.0),
                   child: ElevatedButton(
                     //textColor: Colors.black,
                     onPressed: () {
-                      setState(() {});
-
-                      Navigator.of(context).pop("y");
+                      // setState(() {});
+                      // if (selectedBaseStationID == 0 || selectedBaseStationBranchID == 0) {
+                      //   print("$selectedBaseStationID ======= $selectedBaseStationBranchID");
+                      //   return;
+                      // }
+                      Navigator.of(context).pop();
                     },
                     style: ElevatedButton.styleFrom(
                       elevation: 4.0,
@@ -420,7 +423,7 @@ class _YardCheckInState extends State<YardCheckIn> {
                         child: Align(
                           alignment: Alignment.center,
                           child: Text(
-                            'Save',
+                            'OK',
                             style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.normal,

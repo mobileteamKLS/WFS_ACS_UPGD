@@ -3877,7 +3877,7 @@ class _WarehouseAcceptanceDetailsState
       "CreatedByUserId": loggedinUser.CreatedByUserId.toString(),
       "OrganizationId": loggedinUser.OrganizationId.toString(),
       "OrganizationBranchId":
-          selectedTerminalID, // loggedinUser.OrganizationBranchId,
+      selectedBaseStationBranchID,//selectedTerminalID, // loggedinUser.OrganizationBranchId,
     };
     await Global()
         .postData(

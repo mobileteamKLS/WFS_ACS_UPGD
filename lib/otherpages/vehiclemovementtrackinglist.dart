@@ -230,7 +230,7 @@ class _VehicleMovementTrackingListState
     var queryParams = {
       "OperationType": modeType.toString(), // "",
       "OrganizationBranchId":
-          selectedTerminalID, // loggedinUser.OrganizationBranchId,
+          selectedBaseStationBranchID,//selectedTerminalID, // loggedinUser.OrganizationBranchId,
     };
     await Global()
         .postData(
@@ -1262,6 +1262,7 @@ class _VehicleMovementTrackingListState
 
 // This function is called whenever the text field changes
   void _runFilter(String enteredKeyword) {
+    print("8888888");
     List<VehicleToken> results = [];
     if (enteredKeyword.isEmpty) {
       results =
