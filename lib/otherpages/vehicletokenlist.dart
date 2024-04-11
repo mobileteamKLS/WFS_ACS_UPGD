@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_switch/flutter_advanced_switch.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lottie/lottie.dart';
 import 'package:scan/scan.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 import 'package:luxair/datastructure/vehicletoken.dart';
@@ -43,6 +44,7 @@ class _VehicleTokenListState extends State<VehicleTokenList> {
   //  List<CodexPass> passList = [];
   // List<FilterArray> _filterArray = [];
   bool isLoading = false;
+  bool hasNoRecord = false;
   bool isSearched = false;
   bool checked = false;
   TextEditingController txtVTNO = new TextEditingController();
@@ -226,8 +228,10 @@ class _VehicleTokenListState extends State<VehicleTokenList> {
     });
 
     var queryParams = {
-      "OperationType": modeType.toString(), // "",
-      "OrganizationBranchId": selectedBaseStationBranchID,//selectedTerminalID,// loggedinUser.OrganizationBranchId,
+      "OperationType": modeType.toString(),
+      // "",
+      "OrganizationBranchId": selectedBaseStationBranchID,
+      //selectedTerminalID,// loggedinUser.OrganizationBranchId,
     };
     await Global()
         .postData(
@@ -239,6 +243,11 @@ class _VehicleTokenListState extends State<VehicleTokenList> {
       print(json.decode(response.body)['d']);
 
       var msg = json.decode(response.body)['d'];
+      if (msg == "[]") {
+        setState(() {
+          hasNoRecord = true;
+        });
+      }
       var resp = json.decode(msg).cast<Map<String, dynamic>>();
 
       if (modeType == 2) //export
@@ -260,7 +269,7 @@ class _VehicleTokenListState extends State<VehicleTokenList> {
       //   isLoading = false;
       // });
 
-       setState(() {
+      setState(() {
         modeType == 2 ? modeSelected = 0 : modeSelected = 1;
         vehicleToeknListToBind =
             modeType == 2 ? vehicleToeknListExport : vehicleToeknListImport;
@@ -319,14 +328,13 @@ class _VehicleTokenListState extends State<VehicleTokenList> {
           if (returnVal == "") return;
           print("returnVal = " + returnVal);
 
-       if ((returnVal.toLowerCase().contains("search")) ||
-          (returnVal.toLowerCase().contains("look"))||
-          (returnVal.toLowerCase().contains("find")) ||
-           (returnVal.toLowerCase().contains("get"))
-          ) {
+          if ((returnVal.toLowerCase().contains("search")) ||
+              (returnVal.toLowerCase().contains("look")) ||
+              (returnVal.toLowerCase().contains("find")) ||
+              (returnVal.toLowerCase().contains("get"))) {
             returnVal = returnVal.toLowerCase().replaceAll('search', "");
             returnVal = returnVal.toLowerCase().replaceAll('look', "");
-             returnVal = returnVal.toLowerCase().replaceAll('for', "");
+            returnVal = returnVal.toLowerCase().replaceAll('for', "");
             returnVal = returnVal.toLowerCase().replaceAll('find', "");
             returnVal = returnVal.toLowerCase().replaceAll('get', "");
             print("returnVal after replace " + returnVal);
@@ -633,7 +641,7 @@ class _VehicleTokenListState extends State<VehicleTokenList> {
                                         ),
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
-                                        child: SizedBox(
+                                          child: SizedBox(
                                             width: MediaQuery.of(context)
                                                     .size
                                                     .width /
@@ -677,30 +685,27 @@ class _VehicleTokenListState extends State<VehicleTokenList> {
                                                   Color(0xFF3540E8)
                                                 ],
                                               ],
-                                              animate:
-                                                  true, // with just animate set to true, default curve = Curves.easeIn
-                                              curve: Curves
-                                                  .bounceInOut, // animate must be set to true when using custom curve
+                                              animate: true,
+                                              // with just animate set to true, default curve = Curves.easeIn
+                                              curve: Curves.bounceInOut,
+                                              // animate must be set to true when using custom curve
                                               onToggle: (index) {
                                                 print('switched to: $index');
 
                                                 setState(() {
                                                   //selectedText = "";
                                                   modeSelected = index!;
-                                                  if (index == 1)
-                                                  {
-                                                    
-                                                      getVehicleToeknList(1); //Import
-                                                      vehicleToeknListToBind =
+                                                  if (index == 1) {
+                                                    getVehicleToeknList(
+                                                        1); //Import
+                                                    vehicleToeknListToBind =
                                                         vehicleToeknListImport;
-                                                  }
-                                                  else
-                                                  {
-                                                    getVehicleToeknList(2); //Export
+                                                  } else {
+                                                    getVehicleToeknList(
+                                                        2); //Export
                                                     vehicleToeknListToBind =
                                                         vehicleToeknListExport;
                                                   }
-                                                    
                                                 });
                                               },
                                             ),
@@ -905,31 +910,38 @@ class _VehicleTokenListState extends State<VehicleTokenList> {
                         height: 100,
                         width: 100,
                         child: CircularProgressIndicator()))
-                : Expanded(
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: useMobileLayout
-                            ? const EdgeInsets.only(top: 2.0, left: 0.0)
-                            : const EdgeInsets.only(
-                                top: 2.0, bottom: 10.0, left: 40.0),
-                        child: SizedBox(
-                            width: useMobileLayout
-                                ? MediaQuery.of(context).size.width / 1.01
-                                : MediaQuery.of(context).size.width / 1.19,
-                            child: ListView.builder(
-                              physics: NeverScrollableScrollPhysics(),
-                              itemBuilder: (BuildContext, index) {
-                                VehicleToken _dockinlist =
-                                    vehicleToeknListToBind.elementAt(index);
-                                return buildDockList(_dockinlist, index);
-                              },
-                              itemCount: vehicleToeknListToBind.length,
-                              shrinkWrap: true,
-                              padding: EdgeInsets.all(2),
-                            )),
-                      ),
-                    ),
-                  )
+                : hasNoRecord
+                    ? Container(
+                        height: MediaQuery.of(context).size.height / 1.5,
+                        child: Center(
+                          child: Lottie.asset('assets/images/nodata.json'),
+                        ),
+                      )
+                    : Expanded(
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: useMobileLayout
+                                ? const EdgeInsets.only(top: 2.0, left: 0.0)
+                                : const EdgeInsets.only(
+                                    top: 2.0, bottom: 10.0, left: 40.0),
+                            child: SizedBox(
+                                width: useMobileLayout
+                                    ? MediaQuery.of(context).size.width / 1.01
+                                    : MediaQuery.of(context).size.width / 1.19,
+                                child: ListView.builder(
+                                  physics: NeverScrollableScrollPhysics(),
+                                  itemBuilder: (BuildContext, index) {
+                                    VehicleToken _dockinlist =
+                                        vehicleToeknListToBind.elementAt(index);
+                                    return buildDockList(_dockinlist, index);
+                                  },
+                                  itemCount: vehicleToeknListToBind.length,
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.all(2),
+                                )),
+                          ),
+                        ),
+                      )
           ]),
     );
   }
@@ -1206,7 +1218,8 @@ class _VehicleTokenListState extends State<VehicleTokenList> {
                                   color: Color(0xFF11249F),
                                 ),
                                 SizedBox(width: 5),
-                                Text(_dl.VEHICLENO.toUpperCase(), style: VTlistTextFontStyle),
+                                Text(_dl.VEHICLENO.toUpperCase(),
+                                    style: VTlistTextFontStyle),
                               ],
                             ),
                           ],

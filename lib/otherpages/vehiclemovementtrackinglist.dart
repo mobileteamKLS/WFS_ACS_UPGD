@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_switch/flutter_advanced_switch.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lottie/lottie.dart';
 import 'package:scan/scan.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 import 'package:luxair/datastructure/vehicletoken.dart';
@@ -46,6 +47,7 @@ class _VehicleMovementTrackingListState
   // List<FilterArray> _filterArray = [];
   bool isLoading = false;
   bool isSearched = false;
+  bool hasNoRecord = false;
   bool checked = false;
   TextEditingController txtVTNO = new TextEditingController();
   final _controllerModeType = ValueNotifier<bool>(false);
@@ -228,9 +230,10 @@ class _VehicleMovementTrackingListState
     });
 
     var queryParams = {
-      "OperationType": modeType.toString(), // "",
-      "OrganizationBranchId":
-          selectedBaseStationBranchID,//selectedTerminalID, // loggedinUser.OrganizationBranchId,
+      "OperationType": modeType.toString(),
+      // "",
+      "OrganizationBranchId": selectedBaseStationBranchID,
+      //selectedTerminalID, // loggedinUser.OrganizationBranchId,
     };
     await Global()
         .postData(
@@ -242,6 +245,11 @@ class _VehicleMovementTrackingListState
       print(json.decode(response.body)['d']);
 
       var msg = json.decode(response.body)['d'];
+      if (msg == "[]") {
+        setState(() {
+          hasNoRecord = true;
+        });
+      }
       var resp = json.decode(msg).cast<Map<String, dynamic>>();
 
       if (modeType == 2) //export
@@ -636,7 +644,7 @@ class _VehicleMovementTrackingListState
                                         ),
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
-                                         child: SizedBox(
+                                          child: SizedBox(
                                             width: MediaQuery.of(context)
                                                     .size
                                                     .width /
@@ -680,10 +688,10 @@ class _VehicleMovementTrackingListState
                                                   Color(0xFF3540E8)
                                                 ],
                                               ],
-                                              animate:
-                                                  true, // with just animate set to true, default curve = Curves.easeIn
-                                              curve: Curves
-                                                  .bounceInOut, // animate must be set to true when using custom curve
+                                              animate: true,
+                                              // with just animate set to true, default curve = Curves.easeIn
+                                              curve: Curves.bounceInOut,
+                                              // animate must be set to true when using custom curve
                                               onToggle: (index) {
                                                 print('switched to: $index');
 
@@ -905,31 +913,38 @@ class _VehicleMovementTrackingListState
                         height: 100,
                         width: 100,
                         child: CircularProgressIndicator()))
-                : Expanded(
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: useMobileLayout
-                            ? const EdgeInsets.only(top: 2.0, left: 0.0)
-                            : const EdgeInsets.only(
-                                top: 2.0, bottom: 10.0, left: 40.0),
-                        child: SizedBox(
-                            width: useMobileLayout
-                                ? MediaQuery.of(context).size.width / 1.01
-                                : MediaQuery.of(context).size.width / 1.19,
-                            child: ListView.builder(
-                              physics: NeverScrollableScrollPhysics(),
-                              itemBuilder: (BuildContext, index) {
-                                VehicleToken _dockinlist =
-                                    vehicleToeknListToBind.elementAt(index);
-                                return buildDockList(_dockinlist, index);
-                              },
-                              itemCount: vehicleToeknListToBind.length,
-                              shrinkWrap: true,
-                              padding: EdgeInsets.all(2),
-                            )),
-                      ),
-                    ),
-                  )
+                : hasNoRecord
+                    ? Container(
+                        height: MediaQuery.of(context).size.height / 1.5,
+                        child: Center(
+                          child: Lottie.asset('assets/images/nodata.json'),
+                        ),
+                      )
+                    : Expanded(
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: useMobileLayout
+                                ? const EdgeInsets.only(top: 2.0, left: 0.0)
+                                : const EdgeInsets.only(
+                                    top: 2.0, bottom: 10.0, left: 40.0),
+                            child: SizedBox(
+                                width: useMobileLayout
+                                    ? MediaQuery.of(context).size.width / 1.01
+                                    : MediaQuery.of(context).size.width / 1.19,
+                                child: ListView.builder(
+                                  physics: NeverScrollableScrollPhysics(),
+                                  itemBuilder: (BuildContext, index) {
+                                    VehicleToken _dockinlist =
+                                        vehicleToeknListToBind.elementAt(index);
+                                    return buildDockList(_dockinlist, index);
+                                  },
+                                  itemCount: vehicleToeknListToBind.length,
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.all(2),
+                                )),
+                          ),
+                        ),
+                      )
           ]),
     );
   }

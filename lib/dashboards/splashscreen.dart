@@ -220,7 +220,7 @@ class _SplashScreenState extends State<SplashScreen> {
         print("isTPS  =  " + isTPS.toString());
         print("isTruckerFF  =  " + isTruckerFF.toString());
         await getUserLocation();
-        await getTerminalBaseStation();
+        await getTerminalBaseStation();//
         await getTerminalsList();
         await getUserBranchList();
         await getVehicleTypesList();
@@ -237,7 +237,7 @@ class _SplashScreenState extends State<SplashScreen> {
             MaterialPageRoute(builder: (BuildContext context) => Dashboards()));
       }
     } else {
-      await getTerminalBaseStation();
+      await getTerminalBaseStation();//
       await getTerminalsList();
       await getUserBranchList();
       await getVehicleTypesList();
@@ -250,12 +250,12 @@ class _SplashScreenState extends State<SplashScreen> {
       print(" *******  saved use NOT received");
       if (useMobileLayout) {
         Timer(
-            Duration(seconds: 4),
+            Duration(seconds: 2),
             () => Navigator.of(context).pushReplacement(MaterialPageRoute(
                 builder: (BuildContext context) => LoginPage())));
       } else {
         Timer(
-            Duration(seconds: 4),
+            Duration(seconds: 2),
             () => Navigator.of(context).pushReplacement(MaterialPageRoute(
                 builder: (BuildContext context) => HomeScreen())));
       }
