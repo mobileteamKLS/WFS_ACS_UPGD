@@ -220,6 +220,7 @@ class _SplashScreenState extends State<SplashScreen> {
         print("isTPS  =  " + isTPS.toString());
         print("isTruckerFF  =  " + isTruckerFF.toString());
         await getUserLocation();
+        await getTerminalBaseStation();//
         await getTerminalsList();
         await getUserBranchList();
         await getVehicleTypesList();
@@ -236,6 +237,7 @@ class _SplashScreenState extends State<SplashScreen> {
             MaterialPageRoute(builder: (BuildContext context) => Dashboards()));
       }
     } else {
+      await getTerminalBaseStation();//
       await getTerminalsList();
       await getUserBranchList();
       await getVehicleTypesList();
@@ -248,12 +250,12 @@ class _SplashScreenState extends State<SplashScreen> {
       print(" *******  saved use NOT received");
       if (useMobileLayout) {
         Timer(
-            Duration(seconds: 4),
+            Duration(seconds: 2),
             () => Navigator.of(context).pushReplacement(MaterialPageRoute(
                 builder: (BuildContext context) => LoginPage())));
       } else {
         Timer(
-            Duration(seconds: 4),
+            Duration(seconds: 2),
             () => Navigator.of(context).pushReplacement(MaterialPageRoute(
                 builder: (BuildContext context) => HomeScreen())));
       }
@@ -459,7 +461,43 @@ class _SplashScreenState extends State<SplashScreen> {
       ),
     );
   }
+  getTerminalBaseStation() async {
+    if (isLoading) return;
+    setState(() {
+      isLoading = true;
+    });
+    var queryParams = {'UserId': 0, 'OrganizationId': 0};
+    await Global()
+        .postData(
+      Settings.SERVICES['GetBaseStation'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
 
+      var msg = json.decode(response.body)['d'];
+      var resp = json.decode(msg).cast<Map<String, dynamic>>();
+
+      baseStationList = resp
+          .map<WarehouseBaseStation>((json) => WarehouseBaseStation.fromJson(json))
+          .toList();
+      WarehouseBaseStation wt = new WarehouseBaseStation(airportcode: "Select",cityid: 0,organizationId: "",orgName: "");
+      baseStationList.add(wt);
+      baseStationList.sort((a, b) => a.cityid.compareTo(b.cityid));
+
+      print("length baseStationList = " + baseStationList.length.toString());
+
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
+  }
   getTerminalsList() async {
     if (isLoading) return;
 
@@ -489,7 +527,7 @@ class _SplashScreenState extends State<SplashScreen> {
           .toList();
 
       WarehouseTerminals wt =
-          new WarehouseTerminals(custudian: 0, custodianName: "Select");
+          new WarehouseTerminals(custudian: 0, custodianName: "Select",iswalkinEnable: false);
       terminalsList.add(wt);
       terminalsList.sort((a, b) => a.custudian.compareTo(b.custudian));
 

@@ -24,7 +24,6 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
   String selectedVehicleText = "";
   final _controllerModeType = ValueNotifier<bool>(false);
   bool checked = false;
-
   bool isValidVehicleNo = true;
   bool isValidTruckingCompanyName = true;
   bool isValidDriverName = true;
@@ -54,6 +53,7 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
   // }
   @override
   void initState() {
+    super.initState();
     _controllerModeType.addListener(() {
       setState(() {
         //scannedCodeReceived = "";
@@ -65,7 +65,6 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
         }
       });
     });
-    super.initState();
   }
 
   @override
@@ -116,29 +115,29 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                       children: [
                         useMobileLayout
                             ? Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width / 2,
-                                    child: Text("Mode",
-                                        style: mobileHeaderFontStyle),
-                                  ),
-                                  AdvancedSwitch(
-                                    activeColor: Color(0xFF11249F),
-                                    inactiveColor: Color(0xFF11249F),
-                                    activeChild: Text('Import',
-                                        style: mobileToggleTextFontStyleWhite),
-                                    inactiveChild: Text('Export',
-                                        style: mobileToggleTextFontStyleWhite),
-                                    width:
-                                        MediaQuery.of(context).size.width / 2.5,
-                                    height: 35,
-                                    controller: _controllerModeType,
-                                  ),
-                                ],
-                              )
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width:
+                              MediaQuery.of(context).size.width / 2,
+                              child: Text("Mode",
+                                  style: mobileHeaderFontStyle),
+                            ),
+                            AdvancedSwitch(
+                              activeColor: Color(0xFF11249F),
+                              inactiveColor: Color(0xFF11249F),
+                              activeChild: Text('Import',
+                                  style: mobileToggleTextFontStyleWhite),
+                              inactiveChild: Text('Export',
+                                  style: mobileToggleTextFontStyleWhite),
+                              width:
+                              MediaQuery.of(context).size.width / 2.5,
+                              height: 35,
+                              controller: _controllerModeType,
+                            ),
+                          ],
+                        )
                             : Text("Mode", style: iPadHeaderFontStyle),
                         if (!useMobileLayout) SizedBox(height: 10),
                         if (!useMobileLayout)
@@ -180,7 +179,7 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                               [Color(0xFF1220BC), Color(0xFF3540E8)],
                             ],
                             animate:
-                                true, // with just animate set to true, default curve = Curves.easeIn
+                            true, // with just animate set to true, default curve = Curves.easeIn
                             curve: Curves
                                 .bounceInOut, // animate must be set to true when using custom curve
                             onToggle: (index) {
@@ -224,12 +223,12 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                             //underline: SizedBox(),
                             //icon: SvgPicture.asset("assets/icons/dropdown.svg"),
                             menuMaxHeight:
-                                MediaQuery.of(context).size.height / 2.5,
+                            MediaQuery.of(context).size.height / 2.5,
 
                             hint: Text("---- Select ----",
                                 style: iPadYellowTextFontStyleBold),
-                            value: selectedTerminalID,
-                            items: terminalsList.map((terminal) {
+                            value: terminalsListDDL[0].custudian,
+                            items: terminalsListDDL.map((terminal) {
                               return DropdownMenuItem(
                                 child: Text(terminal.custodianName,
                                     style: iPadTextFontStyle), //label of item
@@ -237,11 +236,11 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                               );
                             }).toList(),
                             onChanged: (value) {
-                              setState(() {
-                                selectedTerminal = value.toString();
-                                selectedTerminalID =
-                                    int.parse(value.toString());
-                              });
+                              // setState(() {
+                              //   selectedTerminal = value.toString();
+                              //   selectedTerminalID =
+                              //       int.parse(value.toString());
+                              // });
                             },
                           ),
                         ),
@@ -275,7 +274,7 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                       isExpanded: true,
                                       decoration: InputDecoration(
                                         contentPadding:
-                                            EdgeInsets.fromLTRB(8, 0, 8, 0),
+                                        EdgeInsets.fromLTRB(8, 0, 8, 0),
                                         // filled: true,
                                         enabledBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
@@ -284,13 +283,13 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                                   : Colors.red,
                                               width: 1),
                                           borderRadius:
-                                              BorderRadius.circular(4.0),
+                                          BorderRadius.circular(4.0),
                                         ),
                                       ),
                                       dropdownColor: Colors.white,
                                       menuMaxHeight:
-                                          MediaQuery.of(context).size.height /
-                                              2.5,
+                                      MediaQuery.of(context).size.height /
+                                          2.5,
                                       hint: Text("---- Select ----",
                                           style: iPadYellowTextFontStyleBold),
                                       //  value: selectedVehicleID,
@@ -298,7 +297,7 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                         return DropdownMenuItem(
                                           child: Text(vehicle.TruckTypeName,
                                               style:
-                                                  iPadTextFontStyle), //label of item
+                                              iPadTextFontStyle), //label of item
                                           value: vehicle
                                               .TruckTypeId, //value of item
                                         );
@@ -334,14 +333,14 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                   width: useMobileLayout
                                       ? MediaQuery.of(context).size.width / 1.1
                                       : MediaQuery.of(context).size.width /
-                                          2.2, //d coding child width
+                                      2.2, //d coding child width
                                   child: Container(
                                     height: 48,
                                     width: useMobileLayout
                                         ? MediaQuery.of(context).size.width /
-                                            1.1
+                                        1.1
                                         : MediaQuery.of(context).size.width /
-                                            2.2,
+                                        2.2,
                                     decoration: BoxDecoration(
                                       border: Border.all(
                                         color: isValidVehicleNo
@@ -355,12 +354,12 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                         controller: txtVehicleNo,
                                         keyboardType: TextInputType.text,
                                         textCapitalization:
-                                            TextCapitalization.characters,
+                                        TextCapitalization.characters,
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           hintText: "Enter Vehicle No.",
                                           hintStyle:
-                                              TextStyle(color: Colors.grey),
+                                          TextStyle(color: Colors.grey),
                                           contentPadding: EdgeInsets.symmetric(
                                               vertical: 8, horizontal: 8),
                                           isDense: true,
@@ -403,9 +402,9 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                     height: 55,
                                     width: useMobileLayout
                                         ? MediaQuery.of(context).size.width /
-                                            1.1
+                                        1.1
                                         : MediaQuery.of(context).size.width /
-                                            2.2,
+                                        2.2,
                                     decoration: BoxDecoration(
                                       border: Border.all(
                                         color: isValidTruckingCompanyName
@@ -418,14 +417,14 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                     child: TextField(
                                         keyboardType: TextInputType.text,
                                         textCapitalization:
-                                            TextCapitalization.characters,
+                                        TextCapitalization.characters,
                                         controller: txtTruCompanyName,
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           hintText:
-                                              "Enter trucking company name",
+                                          "Enter trucking company name",
                                           hintStyle:
-                                              TextStyle(color: Colors.grey),
+                                          TextStyle(color: Colors.grey),
                                           contentPadding: EdgeInsets.symmetric(
                                               vertical: 8, horizontal: 8),
                                           isDense: true,
@@ -461,9 +460,9 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                     height: 55,
                                     width: useMobileLayout
                                         ? MediaQuery.of(context).size.width /
-                                            1.1
+                                        1.1
                                         : MediaQuery.of(context).size.width /
-                                            2.2,
+                                        2.2,
                                     decoration: BoxDecoration(
                                       border: Border.all(
                                         color: isValidDriverName
@@ -477,12 +476,12 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                         controller: txtDriverName,
                                         keyboardType: TextInputType.text,
                                         textCapitalization:
-                                            TextCapitalization.characters,
+                                        TextCapitalization.characters,
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           hintText: "Enter driver name",
                                           hintStyle:
-                                              TextStyle(color: Colors.grey),
+                                          TextStyle(color: Colors.grey),
                                           contentPadding: EdgeInsets.symmetric(
                                               vertical: 8, horizontal: 8),
                                           isDense: true,
@@ -527,9 +526,9 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                     height: 55,
                                     width: useMobileLayout
                                         ? MediaQuery.of(context).size.width /
-                                            1.1
+                                        1.1
                                         : MediaQuery.of(context).size.width /
-                                            2.2,
+                                        2.2,
                                     decoration: BoxDecoration(
                                       border: Border.all(
                                         color: isValidDriverMobNo
@@ -546,7 +545,7 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                           border: InputBorder.none,
                                           hintText: "Enter driver Mobile No.",
                                           hintStyle:
-                                              TextStyle(color: Colors.grey),
+                                          TextStyle(color: Colors.grey),
                                           contentPadding: EdgeInsets.symmetric(
                                               vertical: 8, horizontal: 8),
                                           isDense: true,
@@ -581,9 +580,9 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                     height: 55,
                                     width: useMobileLayout
                                         ? MediaQuery.of(context).size.width /
-                                            1.1
+                                        1.1
                                         : MediaQuery.of(context).size.width /
-                                            2.2,
+                                        2.2,
                                     decoration: BoxDecoration(
                                       border: Border.all(
                                         color: isValidDriverLicNo
@@ -597,12 +596,12 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                         controller: txtDriverLicNo,
                                         keyboardType: TextInputType.text,
                                         textCapitalization:
-                                            TextCapitalization.characters,
+                                        TextCapitalization.characters,
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           hintText: "Enter driver License No.",
                                           hintStyle:
-                                              TextStyle(color: Colors.grey),
+                                          TextStyle(color: Colors.grey),
                                           contentPadding: EdgeInsets.symmetric(
                                               vertical: 8, horizontal: 8),
                                           isDense: true,
@@ -649,9 +648,9 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                     height: 55,
                                     width: useMobileLayout
                                         ? MediaQuery.of(context).size.width /
-                                            1.1
+                                        1.1
                                         : MediaQuery.of(context).size.width /
-                                            2.2,
+                                        2.2,
                                     decoration: BoxDecoration(
                                       border: Border.all(
                                         color: Colors.grey.withOpacity(0.5),
@@ -663,15 +662,15 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                         controller: txtStaCode,
                                         keyboardType: TextInputType.text,
                                         textCapitalization:
-                                            TextCapitalization.characters,
+                                        TextCapitalization.characters,
                                         maxLength: 13,
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           counterText: "",
                                           hintText:
-                                              "Enter 13 Digit STA Code", //"Enter driver name",
+                                          "Enter 13 Digit STA Code", //"Enter driver name",
                                           hintStyle:
-                                              TextStyle(color: Colors.grey),
+                                          TextStyle(color: Colors.grey),
                                           contentPadding: EdgeInsets.symmetric(
                                               vertical: 8, horizontal: 8),
                                           isDense: true,
@@ -710,9 +709,9 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                     height: 55,
                                     width: useMobileLayout
                                         ? MediaQuery.of(context).size.width /
-                                            1.1
+                                        1.1
                                         : MediaQuery.of(context).size.width /
-                                            2.2,
+                                        2.2,
                                     decoration: BoxDecoration(
                                       border: Border.all(
                                         color: Colors.grey.withOpacity(0.5),
@@ -721,18 +720,18 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                       borderRadius: BorderRadius.circular(4.0),
                                     ),
                                     child: TextField(
-                                        //keyboardType: TextInputType.text,
+                                      //keyboardType: TextInputType.text,
                                         controller: txtEmail,
                                         keyboardType:
-                                            TextInputType.emailAddress,
+                                        TextInputType.emailAddress,
                                         textCapitalization:
-                                            TextCapitalization.none,
+                                        TextCapitalization.none,
                                         autocorrect: false,
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           hintText: "Enter email id",
                                           hintStyle:
-                                              TextStyle(color: Colors.grey),
+                                          TextStyle(color: Colors.grey),
                                           contentPadding: EdgeInsets.symmetric(
                                               vertical: 8, horizontal: 8),
                                           isDense: true,
@@ -851,7 +850,7 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                 elevation: 4.0,
                                 shape: RoundedRectangleBorder(
                                     borderRadius:
-                                        BorderRadius.circular(10.0)), //
+                                    BorderRadius.circular(10.0)), //
                                 padding: const EdgeInsets.all(0.0),
                               ),
 
@@ -929,7 +928,7 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                       lisNo: txtDriverLicNo.text,
                                       mobNo: txtDriverMobNo.text,
                                       mobNoPrefix: "852",
-                                      terminal: selectedTerminal.toString(),
+                                      terminal: terminalsListDDL[0].custudian.toString(), //selectedTerminal.toString(),
                                       truckCompany: txtTruCompanyName.text,
                                       vehNo: txtVehicleNo.text,
                                       vehType: selectedVehicleID.toString());
@@ -939,11 +938,11 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                     context,
                                     MaterialPageRoute(
                                         builder: (context) => WalkInAwbDetails(
-                                              walkinTable: walkInTable,
-                                              modeSelected: modeSelected == 0
-                                                  ? "Drop-off"
-                                                  : "Pick-up",
-                                            )),
+                                          walkinTable: walkInTable,
+                                          modeSelected: modeSelected == 0
+                                              ? "Drop-off"
+                                              : "Pick-up",
+                                        )),
                                   );
                                 } else {
                                   showAlertDialog(context, "OK", "Alert",
@@ -954,7 +953,7 @@ class _WalkInCustomerState extends State<WalkInCustomer> {
                                 elevation: 4.0,
                                 shape: RoundedRectangleBorder(
                                     borderRadius:
-                                        BorderRadius.circular(10.0)), //
+                                    BorderRadius.circular(10.0)), //
                                 padding: const EdgeInsets.all(0.0),
                               ),
                               child: Container(

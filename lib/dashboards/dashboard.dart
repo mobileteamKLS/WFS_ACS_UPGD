@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:luxair/otherpages/bookedslotslist.dart';
 import 'package:luxair/otherpages/slotlist.dart';
@@ -7,6 +8,7 @@ import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 // import 'package:shared_preferences/shared_preferences.dart';
 import 'package:luxair/dashboards/login.dart';
 import 'package:luxair/datastructure/userdetails.dart';
@@ -25,6 +27,8 @@ import 'package:luxair/otherpages/warehouseacclist.dart';
 import 'package:luxair/widgets/customdialogue.dart';
 import 'package:luxair/widgets/headers.dart';
 import '../constants.dart';
+import '../datastructure/vehicletoken.dart';
+import '../widgets/common.dart';
 import 'homescreen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -39,6 +43,15 @@ class _DashboardsState extends State<Dashboards> {
   var printDate = ""; //DateFormat('dd-MMM-yyyy hh:mm').format(DateTime.now());
   bool useMobileLayout = false;
   late Timer _timer;
+  List<WarehouseBaseStationBranch> dummyList = [
+    WarehouseBaseStationBranch(
+        organizationId: 0,
+        organizationBranchId: 0,
+        orgName: "Select",
+        orgBranchName: "Select")
+  ];
+  String selectedBaseStation = "Select";
+  String selectedBaseStationBranch = "Select";
 
   @override
   void initState() {
@@ -46,6 +59,8 @@ class _DashboardsState extends State<Dashboards> {
     // Timer.periodic(Duration(seconds:1), (Timer t)=>getCurrentDateTime());
     _timer = new Timer.periodic(
         Duration(seconds: 1), (Timer timer) => getCurrentDateTime());
+    selectedBaseStationBranchID=0;
+    selectedBaseStationID=0;
     super.initState();
   }
 
@@ -55,9 +70,68 @@ class _DashboardsState extends State<Dashboards> {
     super.dispose();
   }
 
+  bool isTerminalSelected() {
+    if (selectedBaseStationID == 0 || selectedBaseStationBranchID == 0) {
+      return false;
+    }
+    return true;
+  }
+
   void getCurrentDateTime() {
     setState(() {
       printDate = DateFormat('dd-MMM-yyyy hh:mm').format(DateTime.now());
+    });
+  }
+
+  changeValue() async {
+    await getBaseStationBranch(selectedBaseStationID);
+    print("******* ${baseStationBranchList.toString()} ********");
+    setState(() {
+      dummyList = baseStationBranchList;
+    });
+  }
+
+  getBaseStationBranch(cityId) async {
+    baseStationBranchList = [];
+    dummyList = [];
+    selectedBaseStationBranchID = 0;
+    selectedBaseStationBranch = "Select";
+    var queryParams = {"CityId": cityId, "OrganizationId": loggedinUser.OrganizationId.toString(), "UserId": loggedinUser.CreatedByUserId.toString()};
+    await Global()
+        .postData(
+      Settings.SERVICES['GetBaseStationBranch'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+
+      var msg = json.decode(response.body)['d'];
+      var resp = json.decode(msg).cast<Map<String, dynamic>>();
+
+      baseStationBranchList = resp
+          .map<WarehouseBaseStationBranch>(
+              (json) => WarehouseBaseStationBranch.fromJson(json))
+          .toList();
+
+      WarehouseBaseStationBranch wt = new WarehouseBaseStationBranch(
+          orgName: "",
+          organizationId: 0,
+          organizationBranchId: 0,
+          orgBranchName: "Select");
+      baseStationBranchList.add(wt);
+      baseStationBranchList.sort(
+          (a, b) => a.organizationBranchId.compareTo(b.organizationBranchId));
+
+      print("length baseStationList = " +
+          baseStationBranchList.length.toString());
+      print(baseStationBranchList.toString());
+      setState(() {});
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
     });
   }
 
@@ -117,7 +191,8 @@ class _DashboardsState extends State<Dashboards> {
                       ],
                     ),
                   ),
-                  height: MediaQuery.of(context).size.height / 3.2, //180,
+                  height: MediaQuery.of(context).size.height / 3.2,
+                  //180,
                   alignment: Alignment.center,
 
                   child: DefaultTextStyle(
@@ -152,7 +227,8 @@ class _DashboardsState extends State<Dashboards> {
                                           borderRadius:
                                               BorderRadius.circular(5),
                                           child: Image.asset(
-                                              "assets/images/kls.jpg",//YVR.png", //WFS_logo.png",
+                                              "assets/images/kls.jpg",
+                                              //YVR.png", //WFS_logo.png",
                                               fit: kIsWeb
                                                   ? BoxFit.fill
                                                   : useMobileLayout
@@ -180,7 +256,8 @@ class _DashboardsState extends State<Dashboards> {
                                             borderRadius:
                                                 BorderRadius.circular(5),
                                             child: Image.asset(
-                                                "assets/images/kls.jpg", //YVR.png", //WFS_logo.png",
+                                                "assets/images/kls.jpg",
+                                                //YVR.png", //WFS_logo.png",
                                                 fit: kIsWeb
                                                     ? BoxFit.fill
                                                     : useMobileLayout
@@ -222,14 +299,17 @@ class _DashboardsState extends State<Dashboards> {
                                             DefaultTextStyle(
                                               style: TextStyle(
                                                   fontSize:
-                                                    MediaQuery.of(context).size.width/24,
+                                                      MediaQuery.of(context)
+                                                              .size
+                                                              .width /
+                                                          24,
                                                   fontWeight: FontWeight.bold,
                                                   color: Colors.white),
                                               child: AnimatedTextKit(
                                                 animatedTexts: [
-                                                 
                                                   TyperAnimatedText(
-                                                      'Bonjour !!'), TyperAnimatedText(
+                                                      'Bonjour !!'),
+                                                  TyperAnimatedText(
                                                       'Welcome !!'),
                                                   // TyperAnimatedText('Bienvenida !!'),
                                                   // TyperAnimatedText('ਸੁਆਗਤ ਹੈ !!'),
@@ -283,7 +363,8 @@ class _DashboardsState extends State<Dashboards> {
                                               padding: const EdgeInsets.only(
                                                   top: 5.0),
                                               child: Text(
-                                                printDate, //"28 June 2022 23:40 ",
+                                                printDate,
+                                                //"28 June 2022 23:40 ",
                                                 style: TextStyle(
                                                   fontSize: useMobileLayout
                                                       ? MediaQuery.of(context)
@@ -299,102 +380,95 @@ class _DashboardsState extends State<Dashboards> {
                                           useMobileLayout
                                               ? SizedBox(height: 6)
                                               : SizedBox(height: 10),
-                                          if (isGHA)
-                                            SizedBox(
-                                              width: useMobileLayout
-                                                  ? MediaQuery.of(context)
-                                                          .size
-                                                          .width /
-                                                      2
-                                                  : 230,
-                                              height: useMobileLayout
-                                                  ? MediaQuery.of(context)
-                                                          .size
-                                                          .height /
-                                                      18
-                                                  : 50,
-                                              child: DropdownButtonHideUnderline(
-                                                child: Container(
-                                                  constraints:
-                                                  BoxConstraints(
-                                                      minHeight:
-                                                      50),
-                                                  decoration:
-                                                  BoxDecoration(
-                                                    border: Border.all(
-                                                        color: Colors
-                                                            .grey,
-                                                        width: 0.2),
-                                                    borderRadius: BorderRadius
-                                                        .all(Radius
-                                                        .circular(
-                                                        5)),
-                                                    color: Colors
-                                                        .white,
-                                                  ),
-                                                  padding: EdgeInsets
-                                                      .symmetric(
-                                                      horizontal:
-                                                      10),
-                                                  child:
-                                                  DropdownButton(
-                                                    value:
-                                                    selectedTerminalID,
-                                                    items: terminalsList
-                                                        .map((terminal) {
-                                                      return DropdownMenuItem(
-                                                        child: Text(
-                                                            terminal.custodianName
-                                                                .toUpperCase(),
-                                                            style: useMobileLayout
-                                                                ? mobileTextFontStyle
-                                                                : iPadYellowTextFontStyleBold), //label of item
-                                                        value: terminal
-                                                            .custudian, //value of item
-                                                      );
-                                                    }).toList(),
-                                                    onChanged: (value) {
-                                                      setState(() {
-                                                        selectedTerminal =
-                                                            value.toString();
-                                                        selectedTerminalID =
-                                                            int.parse(
-                                                                value.toString());
-                                                      });
-                                                    },
-                                                    // items: [
-                                                    //   "Select",
-                                                    //   "Two",
-                                                    //   "Three"
-                                                    // ]
-                                                    //     .map((String
-                                                    // value) =>
-                                                    //     DropdownMenuItem(
-                                                    //       value:
-                                                    //       value,
-                                                    //       child:
-                                                    //       Column(
-                                                    //         mainAxisAlignment:
-                                                    //         MainAxisAlignment.center,
-                                                    //         crossAxisAlignment:
-                                                    //         CrossAxisAlignment.start,
-                                                    //         children: [
-                                                    //           Text(
-                                                    //             value,
-                                                    //             style: TextStyle(
-                                                    //               fontSize: 14,
-                                                    //               fontWeight: FontWeight.normal,
-                                                    //               color: Colors.black,
-                                                    //             ),
-                                                    //           ),
-                                                    //         ],
-                                                    //       ),
-                                                    //     ))
-                                                    //     .toList(),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
+                                          // if (isGHA)
+                                          //   SizedBox(
+                                          //     width: useMobileLayout
+                                          //         ? MediaQuery.of(context)
+                                          //                 .size
+                                          //                 .width /
+                                          //             2.6
+                                          //         : 230,
+                                          //     height: useMobileLayout
+                                          //         ? MediaQuery.of(context)
+                                          //                 .size
+                                          //                 .height /
+                                          //             18
+                                          //         : 50,
+                                          //     child:
+                                          //         DropdownButtonHideUnderline(
+                                          //       child: Container(
+                                          //         constraints: BoxConstraints(
+                                          //             minHeight: 50),
+                                          //         decoration: BoxDecoration(
+                                          //           border: Border.all(
+                                          //               color: Colors.grey,
+                                          //               width: 0.2),
+                                          //           borderRadius:
+                                          //               BorderRadius.all(
+                                          //                   Radius.circular(5)),
+                                          //           color: Colors.white,
+                                          //         ),
+                                          //         padding: EdgeInsets.symmetric(
+                                          //             horizontal: 10),
+                                          //         child: DropdownButton(
+                                          //           value: selectedTerminalID,
+                                          //           items: terminalsList
+                                          //               .map((terminal) {
+                                          //             return DropdownMenuItem(
+                                          //               child: Text(
+                                          //                   terminal
+                                          //                       .custodianName
+                                          //                       .toUpperCase(),
+                                          //                   style: useMobileLayout
+                                          //                       ? mobileTextFontStyle
+                                          //                       : iPadYellowTextFontStyleBold),
+                                          //               //label of item
+                                          //               value: terminal
+                                          //                   .custudian, //value of item
+                                          //             );
+                                          //           }).toList(),
+                                          //           onChanged: (value) {
+                                          //             setState(() {
+                                          //               selectedTerminal =
+                                          //                   value.toString();
+                                          //               selectedTerminalID =
+                                          //                   int.parse(value
+                                          //                       .toString());
+                                          //             });
+                                          //           },
+                                          //           // items: [
+                                          //           //   "Select",
+                                          //           //   "Two",
+                                          //           //   "Three"
+                                          //           // ]
+                                          //           //     .map((String
+                                          //           // value) =>
+                                          //           //     DropdownMenuItem(
+                                          //           //       value:
+                                          //           //       value,
+                                          //           //       child:
+                                          //           //       Column(
+                                          //           //         mainAxisAlignment:
+                                          //           //         MainAxisAlignment.center,
+                                          //           //         crossAxisAlignment:
+                                          //           //         CrossAxisAlignment.start,
+                                          //           //         children: [
+                                          //           //           Text(
+                                          //           //             value,
+                                          //           //             style: TextStyle(
+                                          //           //               fontSize: 14,
+                                          //           //               fontWeight: FontWeight.normal,
+                                          //           //               color: Colors.black,
+                                          //           //             ),
+                                          //           //           ),
+                                          //           //         ],
+                                          //           //       ),
+                                          //           //     ))
+                                          //           //     .toList(),
+                                          //         ),
+                                          //       ),
+                                          //     ),
+                                          //   ),
                                         ],
                                       ),
                                     ),
@@ -684,6 +758,168 @@ class _DashboardsState extends State<Dashboards> {
               ),
             ]),
             SizedBox(height: useMobileLayout ? 0 : 24),
+            if (isTrucker || isGHA)
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width / 2.1,
+                        child: Center(
+                          child: Text(
+                            "Select Base Station",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.normal,
+                              color: Color(0xFF11249F),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 2,
+                      ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width / 2.1,
+                        child: Center(
+                          child: Text(
+                            "Select Terminal Name",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.normal,
+                              color: Color(0xFF11249F),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 6,
+                      ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width / 2.1,
+                        child: Center(
+                          child: DropdownButtonHideUnderline(
+                            child: Container(
+                              constraints: BoxConstraints(minHeight: 50),
+                              decoration: BoxDecoration(
+                                border:
+                                    Border.all(color: Colors.grey, width: 0.2),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(5)),
+                                color: Colors.white,
+                              ),
+                              padding: EdgeInsets.symmetric(horizontal: 10),
+                              child: DropdownButton(
+                                value: selectedBaseStationID,
+                                isExpanded: true,
+                                onChanged: (value) async {
+                                  setState(() {
+                                    // selectedBaseStation = value.toString();
+                                    selectedBaseStationID =
+                                        int.parse(value.toString());
+                                    // getBaseStationBranch(selectedBaseStationID);
+                                    print(";;;;$selectedBaseStationID;;;");
+                                  });
+                                  await changeValue();
+                                  setState(() {});
+                                },
+                                items: baseStationList2
+                                    .map((terminal) => DropdownMenuItem(
+                                          value: terminal.cityid,
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                terminal.airportcode
+                                                    .toUpperCase(),
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.normal,
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ))
+                                    .toList(),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 8,
+                      ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width / 2.1,
+                        child: Center(
+                          child: DropdownButtonHideUnderline(
+                            child: Container(
+                              constraints: BoxConstraints(minHeight: 50),
+                              decoration: BoxDecoration(
+                                border:
+                                    Border.all(color: Colors.grey, width: 0.2),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(5)),
+                                color: Colors.white,
+                              ),
+                              padding: EdgeInsets.symmetric(horizontal: 10),
+                              child: DropdownButton(
+                                value: selectedBaseStationBranchID,
+                                isDense: false,
+                                isExpanded: true,
+                                onChanged: (_value) {
+                                  setState(() {
+                                    // selectedBaseStationBranch = _value.toString();
+                                    selectedBaseStationBranchID =
+                                        int.parse(_value.toString());
+                                    print(selectedBaseStationBranchID);
+                                    // walkInEnable();
+                                  });
+                                  // print(selectedBaseStationBranch);
+                                },
+                                items: dummyList
+                                    .map((value) => DropdownMenuItem(
+                                          value: value.organizationBranchId,
+                                          child: Wrap(
+                                            // mainAxisAlignment:
+                                            //     MainAxisAlignment.center,
+                                            // crossAxisAlignment:
+                                            //     CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                value.orgBranchName
+                                                    .toUpperCase(),
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.normal,
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ))
+                                    .toList(),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
             Wrap(
               alignment: WrapAlignment.start,
               crossAxisAlignment: WrapCrossAlignment.start,
@@ -698,7 +934,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Dock",
                       "In",
                       DockIn(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
                 if (isGHA)
                   DashboardBlocks(
                       Color(0xFFa8c0ff),
@@ -707,7 +944,8 @@ class _DashboardsState extends State<Dashboards> {
                       "W/H",
                       "Acceptance",
                       WarehouseAcceptanceList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
                 if (isGHA)
                   DashboardBlocks(
                       Color(0xFFa8c0ff),
@@ -716,7 +954,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Record",
                       "POD",
                       RecordPodList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
                 if (isGHA)
                   DashboardBlocks(
                       Color(0xFFff9472),
@@ -725,7 +964,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Dock",
                       "Out",
                       DockOut(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
                 if (isGHA)
                   DashboardBlocks(
                       Color(0xFFa8c0ff),
@@ -734,7 +974,8 @@ class _DashboardsState extends State<Dashboards> {
                       "View Live",
                       "Dock Status",
                       LiveDockStatus(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
                 if (isTrucker || isTruckerFF)
                   DashboardBlocks(
                       Color(0xFFff9472),
@@ -743,7 +984,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Yard",
                       "Check-in",
                       TruckYardCheckInList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
                 if (isTrucker || isTruckerFF)
                   DashboardBlocks(
                       Color(0xFFa8c0ff),
@@ -752,7 +994,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Vehicle Token",
                       "List",
                       VehicleTokenList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
 
                 if (isTrucker || isTruckerFF)
                   DashboardBlocks(
@@ -762,7 +1005,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Vehicle",
                       "Movement Tracking",
                       VehicleMovementTrackingList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
 
                 if (isTrucker || isTruckerFF)
                   DashboardBlocks(
@@ -772,7 +1016,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Book",
                       "Slot",
                       SlotsList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
 
                 if (isTrucker || isTruckerFF)
                   DashboardBlocks(
@@ -782,7 +1027,8 @@ class _DashboardsState extends State<Dashboards> {
                       "View",
                       "Booked Slots",
                       BookedSlotsList(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      isTerminalSelected()),
 
                 if (isTPS)
                   DashboardBlocks(
@@ -792,7 +1038,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Cargo",
                       "Pick-up",
                       CArgoPickUp(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      true),
 
                 if (isTPS)
                   DashboardBlocks(
@@ -802,7 +1049,8 @@ class _DashboardsState extends State<Dashboards> {
                       "Cargo",
                       "Drop",
                       CargoDrop(),
-                      useMobileLayout),
+                      useMobileLayout,
+                      true),
                 // DashboardBlocks(
                 //     Color(0xFF9CECFB),
                 //     Color(0xFF0052D4),
@@ -818,7 +1066,8 @@ class _DashboardsState extends State<Dashboards> {
                     "",
                     "Feedback",
                     AppFeedback(),
-                    useMobileLayout),
+                    useMobileLayout,
+                    true),
                 // Padding(
                 //   padding: const EdgeInsets.only(
                 //       left: 40.0, right: 10.0, top: 32),
@@ -988,7 +1237,7 @@ class _DashboardsState extends State<Dashboards> {
 
 class DashboardBlocks extends StatelessWidget {
   DashboardBlocks(this.color1, this.color2, this.lblicon, this.btnText1,
-      this.btnText2, this.pageroute, this.isMobile);
+      this.btnText2, this.pageroute, this.isMobile, this.isEnabled);
 
   final Color color1;
   final Color color2;
@@ -997,6 +1246,33 @@ class DashboardBlocks extends StatelessWidget {
   final String btnText2;
   final pageroute;
   final bool isMobile;
+  final bool isEnabled;
+
+  void _showAlertDialog(BuildContext context, String msg) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Alert Dialog Title'),
+          content: Text(msg),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Confirm'),
+              onPressed: () {
+                // Handle the confirm action
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1013,10 +1289,12 @@ class DashboardBlocks extends StatelessWidget {
                     alignment: Alignment.bottomCenter,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => pageroute),
-                        );
+                        if (isEnabled) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => pageroute),
+                          );
+                        }
                       },
                       //padding: const EdgeInsets.all(0.0),
                       style: ElevatedButton.styleFrom(
@@ -1036,7 +1314,8 @@ class DashboardBlocks extends StatelessWidget {
                         // height: MediaQuery.of(context).size.height / 4.2,
                         // width: MediaQuery.of(context).size.width / 3, //180,
                         height: 250,
-                        width: 250, //180,
+                        width: 250,
+                        //180,
                         decoration: BoxDecoration(
                           //borderRadius: BorderRadius.circular(10),
                           borderRadius: BorderRadius.only(
@@ -1100,10 +1379,24 @@ class DashboardBlocks extends StatelessWidget {
                       alignment: Alignment.center,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => pageroute),
-                          );
+                          if (isEnabled) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => pageroute),
+                            );
+                          }
+                          if (selectedBaseStationID == 0) {
+                            showAlertDialog(
+                                context, "Ok", "Alert", "Select Base Station");
+                            print("base");
+                            return;
+                          }
+                          if (selectedBaseStationBranchID == 0) {
+                            showAlertDialog(
+                                context, "Ok", "Alert", "Select Terminal");
+                            print("terminal");
+                          }
                         },
                         //padding: const EdgeInsets.all(0.0),
                         style: ElevatedButton.styleFrom(
@@ -1121,7 +1414,8 @@ class DashboardBlocks extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(20),
                           height: MediaQuery.of(context).size.width / 4,
-                          width: MediaQuery.of(context).size.width / 4, //180,
+                          width: MediaQuery.of(context).size.width / 4,
+                          //180,
                           decoration: BoxDecoration(
                             //borderRadius: BorderRadius.circular(10),
                             borderRadius: BorderRadius.only(
@@ -1187,11 +1481,24 @@ class DashboardBlocks extends StatelessWidget {
                         alignment: Alignment.bottomCenter,
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => pageroute),
-                            );
+                            if (isEnabled) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => pageroute),
+                              );
+                            }
+                            if (selectedBaseStationID == 0) {
+                              showAlertDialog(context, "Ok", "Alert",
+                                  "Select Base Station");
+                              print("base");
+                              return;
+                            }
+                            if (selectedBaseStationBranchID == 0) {
+                              showAlertDialog(
+                                  context, "Ok", "Alert", "Select Terminal");
+                              print("terminal");
+                            }
                           },
                           //padding: const EdgeInsets.all(0.0),
                           style: ElevatedButton.styleFrom(
@@ -1209,7 +1516,8 @@ class DashboardBlocks extends StatelessWidget {
                                 bottomLeft: Radius.circular(10),
                                 bottomRight: Radius.circular(10),
                               ),
-                            ), //
+                            ),
+                            //
                             padding: const EdgeInsets.all(0.0),
                           ),
                           child: Container(
@@ -1217,8 +1525,8 @@ class DashboardBlocks extends StatelessWidget {
                             // height: MediaQuery.of(context).size.height / 4.2,
                             // width: MediaQuery.of(context).size.width / 3, //180,
                             height: MediaQuery.of(context).size.height / 5,
-                            width:
-                                MediaQuery.of(context).size.width / 2.5, //180,
+                            width: MediaQuery.of(context).size.width / 2.5,
+                            //180,
                             decoration: BoxDecoration(
                               //borderRadius: BorderRadius.circular(10),
                               borderRadius: BorderRadius.only(
@@ -1263,7 +1571,8 @@ class DashboardBlocks extends StatelessWidget {
                                           ? MediaQuery.of(context).size.width /
                                               20
                                           : MediaQuery.of(context).size.width /
-                                              25, //30, MediaQuery.of(context).size.width / 25, //30,
+                                              25,
+                                      //30, MediaQuery.of(context).size.width / 25, //30,
                                       fontWeight: FontWeight.normal,
                                       color: Colors.white),
                                 ),

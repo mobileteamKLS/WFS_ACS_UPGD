@@ -32,6 +32,32 @@ class _SlotsListState extends State<SlotsList> {
 
   List<AWBDetailImport> shipmentListImport = [];
   List<AWBDetailImport> shipmentListMainImport = [];
+  @override
+  void initState() {
+    getShipmentList();
+    _controllerModeType.addListener(() {
+      setState(() {
+        if (_controllerModeType.value) {
+          checked = true;
+          print("value chnaged heere TO === IMPORT");
+          selectedMode = "Import";
+        } else {
+          checked = false;
+          print("value chnaged heere TO === EXPORT");
+          selectedMode = "Export";
+        }
+        getShipmentList();
+      });
+    });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _controllerModeType.dispose();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -678,32 +704,7 @@ class _SlotsListState extends State<SlotsList> {
     );
   }
 
-  @override
-  void initState() {
-    getShipmentList();
-    _controllerModeType.addListener(() {
-      setState(() {
-        if (_controllerModeType.value) {
-          checked = true;
-          print("value chnaged heere TO === IMPORT");
-          selectedMode = "Import";
-        } else {
-          checked = false;
-          print("value chnaged heere TO === EXPORT");
-          selectedMode = "Export";
-        }
-        getShipmentList();
-      });
-    });
-    super.initState();
-  }
 
-  @override
-  void dispose() {
-    _controllerModeType.dispose();
-
-    super.dispose();
-  }
 
   // refreshList() {
   //   print("value for list is === " + selectedMode);

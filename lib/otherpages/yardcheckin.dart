@@ -5,12 +5,15 @@ import 'package:luxair/datastructure/vehicletoken.dart';
 import 'package:luxair/otherpages/checkin.dart';
 import 'package:luxair/otherpages/dockstatus.dart';
 import 'package:luxair/otherpages/qrscancode.dart';
+import 'package:luxair/otherpages/walkInDockStatus.dart';
 import 'package:luxair/otherpages/walkin.dart';
 import 'package:luxair/widgets/headers.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../constants.dart';
 import '../global.dart';
+import '../widgets/common.dart';
+import '../widgets/customdialogue.dart';
 
 // ignore: must_be_immutable
 class YardCheckIn extends StatefulWidget {
@@ -22,12 +25,419 @@ class YardCheckIn extends StatefulWidget {
 
 class _YardCheckInState extends State<YardCheckIn> {
   bool useMobileLayout = false, isLoading = false;
+  String dropdownValue = "Select";
+  String selectedBaseStation = "Select";
+  String selectedBaseStationBranch = "Select";
+
+  List<WarehouseBaseStationBranch> dummyList = [
+    WarehouseBaseStationBranch(
+        organizationId: 0,
+        organizationBranchId: 0,
+        orgName: "Select",
+        orgBranchName: "Select")
+  ];
+  String walkIn = "";
+  bool isWalkInEnable = false;
+  int custodianId=0;
 
   @override
   void initState() {
-   // getTerminalsList();
-
+    // getTerminal();
+    print("####### ${baseStationBranchList.toString()}########");
+    print("####### $selectedBaseStation ########");
+    selectedBaseStationID = 0;
+    terminalsListDDL=[];
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      //selectTruckerDialog(context);
+      showDialog(
+          barrierDismissible: false,
+          context: context,
+          builder: (context) {
+            return selectTerminalBox();
+          });
+    });
     super.initState();
+  }
+
+  getTerminal() async {
+    var queryParams = {'UserId': 0, 'OrganizationId': 0};
+    await Global()
+        .postData(
+      Settings.SERVICES['GetBaseStation'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+
+      var msg = json.decode(response.body)['d'];
+      var resp = json.decode(msg).cast<Map<String, dynamic>>();
+
+      baseStationList = resp
+          .map<WarehouseBaseStation>(
+              (json) => WarehouseBaseStation.fromJson(json))
+          .toList();
+
+      WarehouseBaseStation wt = new WarehouseBaseStation(
+          airportcode: "Select", cityid: 0, organizationId: "", orgName: "");
+      baseStationList.add(wt);
+      baseStationList.sort((a, b) => a.cityid.compareTo(b.cityid));
+      print("length baseStationList = " + baseStationList.length.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
+  }
+
+  getBaseStationBranch(cityId) async {
+    baseStationBranchList = [];
+    dummyList = [];
+    selectedBaseStationBranchID = 0;
+    selectedBaseStationBranch = "Select";
+    var queryParams = {"CityId": cityId, "OrganizationId": 0, "UserId": 0};
+    await Global()
+        .postData(
+      Settings.SERVICES['GetBaseStationBranch'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+
+      var msg = json.decode(response.body)['d'];
+      var resp = json.decode(msg).cast<Map<String, dynamic>>();
+
+      baseStationBranchList = resp
+          .map<WarehouseBaseStationBranch>(
+              (json) => WarehouseBaseStationBranch.fromJson(json))
+          .toList();
+
+      WarehouseBaseStationBranch wt = new WarehouseBaseStationBranch(
+          orgName: "",
+          organizationId: 0,
+          organizationBranchId: 0,
+          orgBranchName: "Select");
+      baseStationBranchList.add(wt);
+      baseStationBranchList.sort(
+              (a, b) => a.organizationBranchId.compareTo(b.organizationBranchId));
+
+      print("length baseStationList = " +
+          baseStationBranchList.length.toString());
+      print(baseStationBranchList.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
+  }
+
+  walkInEnable() {
+    List<WarehouseTerminals> filteredTerminals = [];
+    for (int i = 0; i < baseStationBranchList.length; i++) {
+      filteredTerminals = terminalsList
+          .where(
+              (terminal) => terminal.custodianName == selectedBaseStationBranch)
+          .toList();
+      setState(() {
+        isWalkInEnable = filteredTerminals[0].iswalkinEnable;
+        custodianId = filteredTerminals[0].custudian;
+      });
+    }
+
+    terminalsListDDL=[];
+    terminalsListDDL.add(filteredTerminals[0]);
+    print(terminalsListDDL.toString());
+    print(isWalkInEnable);
+  }
+
+  changeValue() async {
+    await getBaseStationBranch(selectedBaseStationID);
+    print("******* ${baseStationBranchList.toString()} ********");
+    setState(() {
+      dummyList = baseStationBranchList;
+    });
+  }
+
+  selectTerminalBox() {
+    return Container(
+      height: MediaQuery.of(context).size.height / 5.2, // height: 250,
+      width: MediaQuery.of(context).size.width / 3.8,
+      child: StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Select Terminal',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF11249F),
+                      )),
+                  // GestureDetector(
+                  //   onTap: () {
+                  //     Navigator.of(context).pop();
+                  //   },
+                  //   child: Container(
+                  //     height: 48,
+                  //     width: 48,
+                  //     decoration: BoxDecoration(
+                  //         border: Border.all(
+                  //           width: 2,
+                  //           color: Colors.white,
+                  //         ),
+                  //         color: Colors.red,
+                  //         shape: BoxShape.circle),
+                  //     child: Icon(
+                  //       Icons.close,
+                  //       color: Colors.white,
+                  //       size: 40,
+                  //     ),
+                  //   ),
+                  // ),
+                  // ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width / 3.0,
+                        child: Text(
+                          "Select Base Station",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.normal,
+                            color: Color(0xFF11249F),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width / 3.0,
+                        child: Text(
+                          "Select Terminal Name",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.normal,
+                            color: Color(0xFF11249F),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width / 3.0,
+                        child: DropdownButtonHideUnderline(
+                          child: Container(
+                            constraints: BoxConstraints(minHeight: 50),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey, width: 0.2),
+                              borderRadius: BorderRadius.all(Radius.circular(5)),
+                              color: Colors.white,
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            child: DropdownButton(
+                              value: selectedBaseStationID,
+                              onChanged: (value) async {
+                                setState(() {
+                                  selectedBaseStation = value.toString();
+                                  selectedBaseStationID =
+                                      int.parse(value.toString());
+                                  // getBaseStationBranch(selectedBaseStationID);
+                                });
+                                await changeValue();
+                                setState(() {});
+                              },
+                              items: baseStationList
+                                  .map((terminal) => DropdownMenuItem(
+                                value: terminal.cityid,
+                                child: Column(
+                                  mainAxisAlignment:
+                                  MainAxisAlignment.center,
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      terminal.airportcode.toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.normal,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ))
+                                  .toList(),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width / 3.0,
+                        child: DropdownButtonHideUnderline(
+                          child: Container(
+                            constraints: BoxConstraints(minHeight: 50),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey, width: 0.2),
+                              borderRadius: BorderRadius.all(Radius.circular(5)),
+                              color: Colors.white,
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            child: DropdownButton(
+                              value: selectedBaseStationBranch,
+                              isDense: false,
+                              isExpanded: true,
+                              onChanged: (_value) {
+                                setState(() {
+                                  selectedBaseStationBranch = _value.toString();
+                                  // selectedBaseStationBranchID =
+                                  //     int.parse(_value.toString());
+                                  walkInEnable();
+                                });
+                                print(selectedBaseStationBranch);
+                              },
+                              items: dummyList
+                                  .map((value) => DropdownMenuItem(
+                                value: value.orgBranchName,
+                                child: Wrap(
+                                  // mainAxisAlignment:
+                                  //     MainAxisAlignment.center,
+                                  // crossAxisAlignment:
+                                  //     CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      value.orgBranchName.toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.normal,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ))
+                                  .toList(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+              // },),
+
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0, bottom: 16.0),
+                  child: ElevatedButton(
+                    //textColor: Colors.black,
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      elevation: 4.0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0)), //
+                      padding: const EdgeInsets.all(0.0),
+                    ),
+                    child: Container(
+                      height: 50,
+                      width: 150,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.white,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Clear',
+                            style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.normal,
+                                color: Color(0xFF11249F)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0, bottom: 16.0),
+                  child: ElevatedButton(
+                    //textColor: Colors.black,
+                    onPressed: () {
+                      // setState(() {});
+                      // if (selectedBaseStationID == 0 || selectedBaseStationBranchID == 0) {
+                      //   print("$selectedBaseStationID ======= $selectedBaseStationBranchID");
+                      //   return;
+                      // }
+                      Navigator.of(context).pop();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      elevation: 4.0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0)), //
+                      padding: const EdgeInsets.all(0.0),
+                    ),
+                    child: Container(
+                      height: 50,
+                      width: 150,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        gradient: LinearGradient(
+                          begin: Alignment.topRight,
+                          end: Alignment.bottomLeft,
+                          colors: [
+                            Color(0xFF1220BC),
+                            Color(0xFF3540E8),
+                          ],
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                            'OK',
+                            style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
+    );
   }
 
   @override
@@ -78,7 +488,8 @@ class _YardCheckInState extends State<YardCheckIn> {
                         ],
                       ),
                     ),
-                    height: MediaQuery.of(context).size.height / 4, //180,
+                    height: MediaQuery.of(context).size.height / 4,
+                    //180,
                     alignment: Alignment.center,
 
                     child: Column(
@@ -87,7 +498,7 @@ class _YardCheckInState extends State<YardCheckIn> {
                         children: [
                           Padding(
                             padding:
-                                const EdgeInsets.only(left: 20.0, top: 30.0),
+                            const EdgeInsets.only(left: 20.0, top: 30.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.start,
                               crossAxisAlignment: CrossAxisAlignment.center,
@@ -102,7 +513,7 @@ class _YardCheckInState extends State<YardCheckIn> {
                                       size: useMobileLayout
                                           ? 40
                                           : MediaQuery.of(context).size.width /
-                                              18, //56,
+                                          18, //56,
                                       color: Colors.white,
                                     ),
                                   ),
@@ -114,7 +525,7 @@ class _YardCheckInState extends State<YardCheckIn> {
                                       fontSize: kIsWeb
                                           ? 48
                                           : MediaQuery.of(context).size.width /
-                                              18, //48,
+                                          18, //48,
                                       fontWeight: FontWeight.normal,
                                       color: Colors.white),
                                 ),
@@ -263,55 +674,66 @@ class _YardCheckInState extends State<YardCheckIn> {
             //               ),
             //             ),
             //           )
-            //         : 
-                    
-                    
-                    Padding(
-                      padding: const EdgeInsets.only(top :32.0),
-                      child: Center(
-                          child: Wrap(
-                            alignment: WrapAlignment.center,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              SizedBox(height: 30),
-                              RequestTypeMenuBlock(
-                                  Color(0xFF4364F7),
-                                  Color(0xFFa8c0ff),
-                                  Icons.directions_walk,
-                                  "Just Arrived ?",
-                                  "Walk-in",
-                                  WalkInCustomer(),
-                                  useMobileLayout),
-                              RequestTypeMenuBlock(
-                                  Color(0xFF0052D4),
-                                  Color(0xFF9CECFB),
-                                  //Color(0xFF7F7FD5),
+            //         :
 
-                                  Icons.bookmark,
-                                  "Slot Booked ?",
-                                  "Yard Check-in",
-                                  CheckInYard(),
-                                  useMobileLayout),
-                              RequestTypeMenuBlock(
-                                  Color(0xFFf2709c),
-                                  Color(0xFFff9472),
-                                  Icons.qr_code,
-                                  "Have QR Code ?",
-                                  "Scan & Check-in",
-                                  ScanQRCode(),
-                                  useMobileLayout),
-                              // RequestTypeMenuBlock(
-                              //     Color(0xFFff4b1f), // Color(0xFF1A2980),
-                              //     Color(0xFFff9068),
-                              //     Icons.live_tv,
-                              //     "Dock Status ?",
-                              //     "View Live",
-                              //     LiveDockStatus(),
-                              //     useMobileLayout),
-                            ],
-                          ),
-                        ),
-                    )
+            Padding(
+              padding: const EdgeInsets.only(top: 32.0),
+              child: Center(
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    SizedBox(height: 30),
+                    RequestTypeMenuBlock(
+                        Color(0xFF4364F7),
+                        Color(0xFFa8c0ff),
+                        Icons.directions_walk,
+                        "Just Arrived ?",
+                        "Walk-in",
+                        WalkInCustomer(),
+                        useMobileLayout,
+                        isWalkInEnable),
+                    RequestTypeMenuBlock(
+                        Color(0xFF0052D4),
+                        Color(0xFF9CECFB),
+                        //Color(0xFF7F7FD5),
+
+                        Icons.bookmark,
+                        "Slot Booked ?",
+                        "Yard Check-in",
+                        CheckInYard(),
+                        useMobileLayout,
+                        true),
+                    RequestTypeMenuBlock(
+                        Color(0xFFf2709c),
+                        Color(0xFFff9472),
+                        Icons.qr_code,
+                        "Have QR Code ?",
+                        "Scan & Check-in",
+                        ScanQRCode(),
+                        useMobileLayout,
+                        true),
+                    RequestTypeMenuBlock(
+                        Color(0xFFff4b1f),
+                        Color(0xFFff9068),
+                        Icons.live_tv,
+                        "Dock Status ?",
+                        "View Live",
+                        WalkInLiveDockStatus(),
+                        useMobileLayout,
+                        true),
+                    // RequestTypeMenuBlock(
+                    //     Color(0xFFff4b1f), // Color(0xFF1A2980),
+                    //     Color(0xFFff9068),
+                    //     Icons.live_tv,
+                    //     "Dock Status ?",
+                    //     "View Live",
+                    //     LiveDockStatus(),
+                    //     useMobileLayout),
+                  ],
+                ),
+              ),
+            )
           ],
         ),
       ),
@@ -480,7 +902,7 @@ class _YardCheckInState extends State<YardCheckIn> {
 
 class RequestTypeMenuBlock extends StatelessWidget {
   RequestTypeMenuBlock(this.color1, this.color2, this.lblicon, this.btnText1,
-      this.btnText2, this.pageroute, this.isMobile);
+      this.btnText2, this.pageroute, this.isMobile, this.isWalkInEnable);
 
   final Color color1;
   final Color color2;
@@ -489,6 +911,7 @@ class RequestTypeMenuBlock extends StatelessWidget {
   final String btnText2;
   final pageroute;
   final bool isMobile;
+  final bool isWalkInEnable;
 
   @override
   Widget build(BuildContext context) {
@@ -504,10 +927,24 @@ class RequestTypeMenuBlock extends StatelessWidget {
             alignment: Alignment.center,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => pageroute),
-                );
+                if (isWalkInEnable) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => pageroute),
+                  );
+                } else {
+                  //showSnackBar(context, "Coming Soon !", isMobile);
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) => CustomDialog(
+                      title: "Coming Soon !",
+                      description: "Stay tuned, Our new feature is on its way.",
+                      buttonText: "Okay",
+                      imagepath: 'assets/images/comingsoon.gif',
+                      isMobile: isMobile,
+                    ),
+                  );
+                }
               },
               //padding: const EdgeInsets.all(0.0),
               style: ElevatedButton.styleFrom(
@@ -531,9 +968,8 @@ class RequestTypeMenuBlock extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 height: kIsWeb ? 220 : MediaQuery.of(context).size.height / 3.8,
-                width: kIsWeb
-                    ? 220
-                    : MediaQuery.of(context).size.width / 2.8, //180,
+                width: kIsWeb ? 220 : MediaQuery.of(context).size.width / 2.8,
+                //180,
                 decoration: BoxDecoration(
                   //borderRadius: BorderRadius.circular(10),
                   borderRadius: BorderRadius.only(
@@ -566,9 +1002,9 @@ class RequestTypeMenuBlock extends StatelessWidget {
                           fontSize: kIsWeb
                               ? 30
                               : isMobile
-                                  ? MediaQuery.of(context).size.width / 22
-                                  : MediaQuery.of(context).size.width /
-                                      25, //28,
+                              ? MediaQuery.of(context).size.width / 22
+                              : MediaQuery.of(context).size.width /
+                              25, //28,
                           fontWeight: FontWeight.normal,
                           color: Colors.white),
                     ),
@@ -578,9 +1014,9 @@ class RequestTypeMenuBlock extends StatelessWidget {
                           fontSize: kIsWeb
                               ? 30
                               : isMobile
-                                  ? MediaQuery.of(context).size.width / 20
-                                  : MediaQuery.of(context).size.width /
-                                      25, //28,
+                              ? MediaQuery.of(context).size.width / 20
+                              : MediaQuery.of(context).size.width /
+                              25, //28,
                           fontWeight: FontWeight.bold,
                           color: Colors.white),
                     ),
@@ -608,33 +1044,33 @@ class RequestTypeMenuBlock extends StatelessWidget {
                   ? MediaQuery.of(context).size.height / 8
                   : MediaQuery.of(context).size.height / 12, //108.0,
               decoration: BoxDecoration(
-                  // border: Border.all(
-                  //   width: 2,
-                  //   color: Colors.white,
-                  // ),
-                  // color: Color(0xFF008000),
+                // border: Border.all(
+                //   width: 2,
+                //   color: Colors.white,
+                // ),
+                // color: Color(0xFF008000),
                   color: Colors.white,
                   //Colors.blue.withOpacity(0.5),
                   shape: BoxShape.circle),
               child:
 
-                  // Image(
-                  //   // height: 50.0,
-                  //   // width: 50.0,
-                  //   // fit: BoxFit.scaleDown,
-                  //   image: AssetImage(
-                  //       'assets/icons/qr-code-3.png'),
-                  // )
+              // Image(
+              //   // height: 50.0,
+              //   // width: 50.0,
+              //   // fit: BoxFit.scaleDown,
+              //   image: AssetImage(
+              //       'assets/icons/qr-code-3.png'),
+              // )
 
-                  Icon(lblicon, // Icons.qr_code,
-                      size: kIsWeb
-                          ? 72
-                          : isMobile
-                              ? MediaQuery.of(context).size.width / 9
-                              : 72, //72,
-                      color: color1
-                      //  Color(0xFFdd5e89), //Colors.blue.shade700, //Colors.white,
-                      ),
+              Icon(lblicon, // Icons.qr_code,
+                  size: kIsWeb
+                      ? 72
+                      : isMobile
+                      ? MediaQuery.of(context).size.width / 9
+                      : 72, //72,
+                  color: color1
+                //  Color(0xFFdd5e89), //Colors.blue.shade700, //Colors.white,
+              ),
             ),
           )
         ],
