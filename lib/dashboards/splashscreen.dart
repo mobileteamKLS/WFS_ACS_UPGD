@@ -483,7 +483,7 @@ class _SplashScreenState extends State<SplashScreen> {
           .map<WarehouseBaseStation>((json) => WarehouseBaseStation.fromJson(json))
           .toList();
       WarehouseBaseStation wt = new WarehouseBaseStation(airportcode: "Select",cityid: 0,organizationId: "",orgName: "");
-      baseStationList.add(wt);
+      // baseStationList.add(wt);
       baseStationList.sort((a, b) => a.cityid.compareTo(b.cityid));
 
       print("length baseStationList = " + baseStationList.length.toString());
