@@ -937,8 +937,8 @@ class RequestTypeMenuBlock extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder: (BuildContext context) => CustomDialog(
-                      title: "Coming Soon !",
-                      description: "Stay tuned, Our new feature is on its way.",
+                      title: "Stay tuned !",
+                      description: "Our new feature is on its way.",
                       buttonText: "Okay",
                       imagepath: 'assets/images/comingsoon.gif',
                       isMobile: isMobile,
