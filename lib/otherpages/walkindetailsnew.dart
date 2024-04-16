@@ -178,7 +178,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
   }
 
   getPrefix() async {
-    var queryParams = { 'GHABranchId': selectedBaseStationBranchID.toString()};
+    var queryParams = {'GHABranchId': selectedBaseStationBranchID.toString()};
     await Global()
         .postData(
       Settings.SERVICES['GetAirlinePrefixList'],
@@ -192,11 +192,101 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
       var resp = json.decode(msg).cast<Map<String, dynamic>>();
 
       airlinesPrefixList = resp
-          .map<AirlinesPrefix>(
-              (json) => AirlinesPrefix.fromJson(json))
+          .map<AirlinesPrefix>((json) => AirlinesPrefix.fromJson(json))
           .toList();
 
       print("length baseStationList = " + airlinesPrefixList.length.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
+  }
+
+  getAirport() async {
+    var queryParams = {};
+    await Global()
+        .postData(
+      Settings.SERVICES['GetAiportsList'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+
+      var msg = json.decode(response.body)['d'];
+      var resp = json.decode(msg).cast<Map<String, dynamic>>();
+
+      airportList =
+          resp.map<Airport>((json) => Airport.fromJson(json)).toList();
+
+      print("length baseStationList = " + airportList.length.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
+  }
+
+  verifyAirline() async {
+    List<String> mawbPrefixes=[];
+    String mode="";
+    errMsgText = "";
+    String responseTextUpdated = "";
+    bool isValid = false;
+
+    //Export or Drop off
+    if(modeSelected==0){
+      mode="E";
+      for (AWB u in mawbList){
+        mawbPrefixes.add(u.prefix);
+      }
+    }
+    else{
+      mode="I";
+      for (AWB u in mawbList){
+        mawbPrefixes.add(u.prefix);
+      }
+    }
+    var queryParams = {
+      "Mode":mode,
+      "TerminalId":selectedBaseStationBranchID.toString(),
+      "MAWBPrefix":mawbPrefixes
+    };
+    await Global()
+        .postData(
+      Settings.SERVICES['VerifyAirline'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+
+      if (json.decode(response.body)['d'] != null) {
+        var msg = json.decode(response.body)['d'];
+        var resp = json.decode(msg).cast<Map<String, dynamic>>();
+
+
+        List<ResponseMsg> rspMsg = [];
+        rspMsg = resp
+            .map<ResponseMsg>((json) => ResponseMsg.fromJson(json))
+            .toList();
+        if (rspMsg.isNotEmpty)
+          responseTextUpdated = rspMsg[0].StrMessage.toString();
+      }
+      //
+      // airportList =
+      //     resp.map<Airport>((json) => Airport.fromJson(json)).toList();
+      //
+      // print("length baseStationList = " + airportList.length.toString());
       setState(() {
         isLoading = false;
       });
@@ -363,6 +453,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
     hawbListToBind = hawbList;
     super.initState();
     getPrefix();
+    getAirport();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       addMawb();
     });
@@ -373,52 +464,34 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
     var smallestDimension = MediaQuery.of(context).size.shortestSide;
     useMobileLayout = smallestDimension < 600;
     return Scaffold(
-      // floatingActionButton: FloatingActionButton.extended(
-      //   onPressed: () async {
-      //     if (isSavingData) return;
-      //     // showSuccessMessage();
-      //     var submitCheckin = true; //await saveData();
-      //     if (submitCheckin == true) {
-      //       // print("saved successfully");
-      //
-      //       var dlgstatus = await showDialog(
-      //         context: context,
-      //         builder: (BuildContext context) => CustomDialog(
-      //           title: "VT Generated",
-      //           description: errMsgText,
-      //           buttonText: "Okay",
-      //           imagepath: 'assets/images/successchk.gif',
-      //           isMobile: useMobileLayout,
-      //         ),
-      //       );
-      //       if (dlgstatus == true) {
-      //         Navigator.of(context).pushReplacement(MaterialPageRoute(
-      //             builder: (BuildContext context) => HomeScreen()));
-      //       }
-      //     }
-      //     //  else {
-      //     //   print("error while save");
-      //     //   showDialog(
-      //     //     context: context,
-      //     //     builder: (BuildContext context) => customAlertMessageDialog(
-      //     //         title: errMsgText == "" ? "Error Occured" : "Dock-In Failed",
-      //     //         description: errMsgText == ""
-      //     //             ? "Error occured while performing Dock-In, Please try again after some time"
-      //     //             : errMsgText,
-      //     //         buttonText: "Okay",
-      //     //         imagepath: 'assets/images/warn.gif',
-      //     //         isMobile: useMobileLayout),
-      //     //   );
-      //     // }
-      //   },
-      //   label: const Text('Submit',
-      //       style: TextStyle(
-      //           fontSize: 32,
-      //           fontWeight: FontWeight.normal,
-      //           color: Colors.white)),
-      //   icon: const Icon(Icons.save),
-      //   backgroundColor: Color(0xFF11249F),
-      // ),
+      floatingActionButton: (mawbList.length != 0)
+          ? modeSelected == 0
+              ? FloatingActionButton.extended(
+                  onPressed: () async {},
+                  label: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                    child: const Text('Next',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white)),
+                  ),
+                  backgroundColor: Color(0xFF11249F),
+                )
+              : FloatingActionButton.extended(
+                  onPressed: () async {},
+                  label: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                    child: const Text('Verify',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white)),
+                  ),
+                  backgroundColor: Color(0xFF11249F),
+                )
+          : SizedBox(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       body: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,11 +616,11 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             //   ),
             // ),
 
-            HeaderClipperWaveMultiline(
+            HeaderClipperWaveMultilineNew(
                 color1: Color(0xFF3383CD),
                 color2: Color(0xFF11249F),
                 headerText: "Enter AWB Details",
-                modeText: "",
+                modeText: modeSelected ,
                 isMobile: useMobileLayout,
                 isWeb: kIsWeb),
 
@@ -666,65 +739,114 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             //       )
             //     :
             if (!useMobileLayout)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ToggleSwitch(
-                  minWidth: useMobileLayout
-                      ? MediaQuery.of(context).size.width / 3
-                      : MediaQuery.of(context).size.width / 4.5,
-                  //  width: useMobileLayout ?  MediaQuery.of(context).size.width / 1.4: MediaQuery.of(context).size.width / 2.2,
-                  minHeight: 65.0,
-                  initialLabelIndex: modeSelected,
-                  cornerRadius: 20.0,
-                  activeFgColor: Colors.white,
-                  inactiveBgColor: Colors.grey,
-                  inactiveFgColor: Colors.white,
-                  totalSwitches: 2,
-                  customTextStyles: [
-                    TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.white,
+              Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left:42.0, top: 8.0,bottom: 16.0),
+                    child: ToggleSwitch(
+
+                      minWidth: useMobileLayout
+                          ? MediaQuery.of(context).size.width / 3
+                          : MediaQuery.of(context).size.width / 4.5,
+                      //  width: useMobileLayout ?  MediaQuery.of(context).size.width / 1.4: MediaQuery.of(context).size.width / 2.2,
+                      minHeight: 65.0,
+                      initialLabelIndex: modeSelected,
+                      cornerRadius: 20.0,
+                      activeFgColor: Colors.white,
+                      inactiveBgColor: Colors.grey,
+                      inactiveFgColor: Colors.white,
+                      totalSwitches: 2,
+                      customTextStyles: [
+                        TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.white,
+                        ),
+                        TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.white,
+                        )
+                      ],
+                      labels: ['Drop-off ', ' Pick-up'],
+                      icons: [
+                        Icons.south,
+                        Icons.north,
+                      ],
+                      iconSize: 22.0,
+                      activeBgColors: [
+                        // [Colors.blueAccent, Colors.blue],
+                        // [Colors.blueAccent, Colors.blue],
+
+                        [Color(0xFF1220BC), Color(0xFF3540E8)],
+                        [Color(0xFF1220BC), Color(0xFF3540E8)],
+                      ],
+                      // animate: true,
+                      // with just animate set to true, default curve = Curves.easeIn
+                      curve: Curves.bounceInOut,
+                      // animate must be set to true when using custom curve
+                      onToggle: (index) {
+                        print('switched to: $index');
+
+                        setState(() async {
+                          //selectedText = "";
+                          if ((mawbList.length == 0)) {
+                            modeSelected = index!;
+                            addMawb();
+                          }
+                         print(modeSelected);
+                        });
+                      },
+                        changeOnTap:mawbList.length == 0?true:false,
                     ),
-                    TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.white,
-                    )
-                  ],
-                  labels: ['Drop-off ', ' Pick-up'],
-                  icons: [
-                    Icons.south,
-                    Icons.north,
-                  ],
-                  iconSize: 22.0,
-                  activeBgColors: [
-                    // [Colors.blueAccent, Colors.blue],
-                    // [Colors.blueAccent, Colors.blue],
-
-                    [Color(0xFF1220BC), Color(0xFF3540E8)],
-                    [Color(0xFF1220BC), Color(0xFF3540E8)],
-                  ],
-                  // animate: true,
-                  // with just animate set to true, default curve = Curves.easeIn
-                  curve: Curves.bounceInOut,
-                  // animate must be set to true when using custom curve
-                  onToggle: (index) {
-                    print('switched to: $index');
-
-                    setState(() async {
-                      //selectedText = "";
-                      if ((mawbList.length == 0)) {
-                        modeSelected = index!;
-                      }
-                      addMawb();
-                      // if (index == 1)
-                      //   isPremium = true;
-                      // else
-                      //   isPremium = false;
-                    });
-                  },
-                ),
+                  ),
+                  (mawbList.length == 0 || modeSelected==1)
+                      ? SizedBox()
+                      : Container(
+                          padding: EdgeInsets.all(8.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              addMawb();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              elevation: 4.0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0)), //
+                              padding: const EdgeInsets.all(0.0),
+                            ),
+                            child: Container(
+                              height: 50,
+                              width: 150,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topRight,
+                                  end: Alignment.bottomLeft,
+                                  colors: [
+                                    Color(0xFF1220BC),
+                                    Color(0xFF3540E8),
+                                  ],
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                    top: 8.0, bottom: 8.0),
+                                child: Align(
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'Add MAWB',
+                                    style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.normal,
+                                        color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                ],
               ),
             if (isSavingData)
               Column(
@@ -890,89 +1012,27 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             if (mawbList.length > 0)
               Stack(
                 children: [
-                  Container(
-                    height: MediaQuery.of(context).size.height / 1.49,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: useMobileLayout
-                          ? Padding(
-                              padding: EdgeInsets.only(left: 10, right: 10),
-                              child: Container(
-                                height: 128,
-                                width: MediaQuery.of(context).size.width / 1.03,
-                                child: Card(
-                                  child: SizedBox(
-                                    width: MediaQuery.of(context).size.width /
-                                        1.19,
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemBuilder: (BuildContext, index) {
-                                        AWB _awblist =
-                                            mawbList.elementAt(index);
-                                        return buildMawbListMobile(
-                                            _awblist, index);
-                                      },
-                                      itemCount: mawbList.length,
-                                      shrinkWrap: true,
-                                      padding: EdgeInsets.all(5),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            )
-                          : modeSelected ==
-                                  1 // widget.modeSelected.toLowerCase().contains("pick")
-                              ? Padding(
-                                  padding: EdgeInsets.only(left: 40, right: 20),
-                                  child: Container(
-                                    height: 150,
-                                    width:
-                                        MediaQuery.of(context).size.width / 1.1,
-                                    child: Card(
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(
-                                            top: 10.0,
-                                            bottom: 10.0,
-                                            left: 40.0),
-                                        child: SizedBox(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width /
-                                              1.19,
-                                          child: ListView.builder(
-                                            scrollDirection: Axis.horizontal,
-                                            //rphysics: NeverScrollableScrollPhysics(),
-                                            itemBuilder: (BuildContext, index) {
-                                              AWB _awblist =
-                                                  mawbList.elementAt(index);
-                                              return buildMawbListIpad12(
-                                                  _awblist, index);
-                                            },
-                                            itemCount: mawbList.length,
-                                            shrinkWrap: true,
-                                            padding: EdgeInsets.all(5),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Padding(
-                                  padding: EdgeInsets.only(left: 40, right: 20),
-                                  child: Container(
-                                    // height: 150,
-                                    width:
-                                        MediaQuery.of(context).size.width / 1.1,
+                  Expanded(
+                    child: Container(
+
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: useMobileLayout
+                            ? Padding(
+                                padding: EdgeInsets.only(left: 10, right: 10),
+                                child: Container(
+                                  height: 128,
+                                  width: MediaQuery.of(context).size.width / 1.03,
+                                  child: Card(
                                     child: SizedBox(
                                       width: MediaQuery.of(context).size.width /
                                           1.19,
                                       child: ListView.builder(
-                                        // scrollDirection: Axis.horizontal,
-                                        physics: NeverScrollableScrollPhysics(),
+                                        scrollDirection: Axis.horizontal,
                                         itemBuilder: (BuildContext, index) {
                                           AWB _awblist =
                                               mawbList.elementAt(index);
-                                          return buildMawbListIpad(
+                                          return buildMawbListMobile(
                                               _awblist, index);
                                         },
                                         itemCount: mawbList.length,
@@ -982,77 +1042,176 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                                     ),
                                   ),
                                 ),
+                              )
+                            : modeSelected ==
+                                    1 // widget.modeSelected.toLowerCase().contains("pick")
+                                ? Padding(
+                                    padding: EdgeInsets.only(left: 40, right: 20),
+                                    child: Container(
+                                      height: 150,
+                                      width:
+                                          MediaQuery.of(context).size.width / 1.1,
+                                      child: Card(
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                              top: 10.0,
+                                              bottom: 10.0,
+                                              left: 40.0),
+                                          child: SizedBox(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width /
+                                                1.19,
+                                            child: ListView.builder(
+                                              scrollDirection: Axis.horizontal,
+                                              //rphysics: NeverScrollableScrollPhysics(),
+                                              itemBuilder: (BuildContext, index) {
+                                                AWB _awblist =
+                                                    mawbList.elementAt(index);
+                                                return buildMawbListIpad12(
+                                                    _awblist, index);
+                                              },
+                                              itemCount: mawbList.length,
+                                              shrinkWrap: true,
+                                              padding: EdgeInsets.all(5),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Padding(
+                                    padding: EdgeInsets.only(left: 40, right: 20),
+                                    child: Container(
+                                      // height: 150,
+                                      width:
+                                          MediaQuery.of(context).size.width / 1.1,
+                                      child: SizedBox(
+                                        width: MediaQuery.of(context).size.width /
+                                            1.19,
+                                        child: ListView.builder(
+                                          // scrollDirection: Axis.horizontal,
+                                          physics: NeverScrollableScrollPhysics(),
+                                          itemBuilder: (BuildContext, index) {
+                                            AWB _awblist =
+                                                mawbList.elementAt(index);
+                                            return buildMawbListIpad(
+                                                _awblist, index);
+                                          },
+                                          itemCount: mawbList.length,
+                                          shrinkWrap: true,
+                                          padding: EdgeInsets.all(5),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                      ),
                     ),
                   ),
-                  Positioned(
-                    bottom: 10,
-                    left: useMobileLayout ? 20 : 180,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () {},
-                          style: ButtonStyle(
-                            foregroundColor: MaterialStateProperty.all(
-                                const Color.fromARGB(255, 1, 36, 159)),
-                            backgroundColor: MaterialStateProperty.all(
-                                const Color.fromARGB(255, 255, 255, 255)),
-                            shape: MaterialStateProperty.all<
-                                RoundedRectangleBorder>(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                side:
-                                    const BorderSide(color: Color(0xFF11249F)),
-                              ),
-                            ),
-                          ),
-                          child: SizedBox(
-                            width: useMobileLayout
-                                ? MediaQuery.of(context).size.width / 2.8
-                                : MediaQuery.of(context).size.width / 3.8,
-                            height: useMobileLayout ? 38 : 48,
-                            child: Center(
-                              child: const Text(
-                                "Back",
-                                style: TextStyle(fontSize: 18),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 16,
-                        ),
-                        ElevatedButton(
-                          onPressed: () {},
-                          style: ButtonStyle(
-                            foregroundColor: MaterialStateProperty.all(
-                                const Color.fromARGB(255, 255, 255, 255)),
-                            backgroundColor: MaterialStateProperty.all(
-                                const Color.fromARGB(255, 1, 36, 159)),
-                            shape: MaterialStateProperty.all<
-                                RoundedRectangleBorder>(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                          ),
-                          child: SizedBox(
-                            width: useMobileLayout
-                                ? MediaQuery.of(context).size.width / 2.8
-                                : MediaQuery.of(context).size.width / 3.8,
-                            height: useMobileLayout ? 38 : 48,
-                            child: Center(
-                              child: const Text(
-                                "Save",
-                                style: TextStyle(fontSize: 18),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
+                  // Positioned(
+                  //   bottom: 10,
+                  //   // left: useMobileLayout ? 20 : 180,
+                  //   child: Container(
+                  //     width: useMobileLayout
+                  //         ? MediaQuery.of(context).size.width
+                  //         : MediaQuery.of(context).size.width,
+                  //     child: (mawbList.length != 0)
+                  //         ? modeSelected == 0
+                  //             ? Row(
+                  //                 mainAxisAlignment: MainAxisAlignment.center,
+                  //                 crossAxisAlignment: CrossAxisAlignment.start,
+                  //                 children: [
+                  //                   ElevatedButton(
+                  //                     onPressed: () {
+                  //                       verifyAirline();
+                  //                     },
+                  //                     style: ButtonStyle(
+                  //                       foregroundColor:
+                  //                           MaterialStateProperty.all(
+                  //                               const Color.fromARGB(
+                  //                                   255, 255, 255, 255)),
+                  //                       backgroundColor:
+                  //                           MaterialStateProperty.all(
+                  //                               const Color.fromARGB(
+                  //                                   255, 1, 36, 159)),
+                  //                       shape: MaterialStateProperty.all<
+                  //                           RoundedRectangleBorder>(
+                  //                         RoundedRectangleBorder(
+                  //                           borderRadius:
+                  //                               BorderRadius.circular(10.0),
+                  //                         ),
+                  //                       ),
+                  //                     ),
+                  //                     child: SizedBox(
+                  //                       width: useMobileLayout
+                  //                           ? MediaQuery.of(context)
+                  //                                   .size
+                  //                                   .width /
+                  //                               2.8
+                  //                           : MediaQuery.of(context)
+                  //                                   .size
+                  //                                   .width /
+                  //                               3.8,
+                  //                       height: useMobileLayout ? 38 : 48,
+                  //                       child: Center(
+                  //                         child: const Text(
+                  //                           "Next",
+                  //                           style: TextStyle(fontSize: 18),
+                  //                         ),
+                  //                       ),
+                  //                     ),
+                  //                   ),
+                  //                 ],
+                  //               )
+                  //             : Row(
+                  //                 mainAxisAlignment: MainAxisAlignment.center,
+                  //                 crossAxisAlignment: CrossAxisAlignment.start,
+                  //                 children: [
+                  //                   ElevatedButton(
+                  //                     onPressed: () {
+                  //                       verifyAirline();
+                  //                     },
+                  //                     style: ButtonStyle(
+                  //                       foregroundColor:
+                  //                           MaterialStateProperty.all(
+                  //                               const Color.fromARGB(
+                  //                                   255, 255, 255, 255)),
+                  //                       backgroundColor:
+                  //                           MaterialStateProperty.all(
+                  //                               const Color.fromARGB(
+                  //                                   255, 1, 36, 159)),
+                  //                       shape: MaterialStateProperty.all<
+                  //                           RoundedRectangleBorder>(
+                  //                         RoundedRectangleBorder(
+                  //                           borderRadius:
+                  //                               BorderRadius.circular(10.0),
+                  //                         ),
+                  //                       ),
+                  //                     ),
+                  //                     child: SizedBox(
+                  //                       width: useMobileLayout
+                  //                           ? MediaQuery.of(context)
+                  //                                   .size
+                  //                                   .width /
+                  //                               2.8
+                  //                           : MediaQuery.of(context)
+                  //                                   .size
+                  //                                   .width /
+                  //                               3.8,
+                  //                       height: useMobileLayout ? 38 : 48,
+                  //                       child: Center(
+                  //                         child: const Text(
+                  //                           "Verify",
+                  //                           style: TextStyle(fontSize: 18),
+                  //                         ),
+                  //                       ),
+                  //                     ),
+                  //                   ),
+                  //                 ],
+                  //               )
+                  //         : SizedBox(),
+                  //   ),
+                  // )
                 ],
               ),
             SizedBox(height: 10),
@@ -2586,9 +2745,13 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                             return suggestionsBox;
                           },
                           itemBuilder: (context, AirlinesPrefix suggestion) {
-                            return ListTile(
-                              dense: true,
-                              title: Text(suggestion.AirlinePrefix.toString()),
+                            return Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 24.0, vertical: 2.0),
+                              child: Text(
+                                suggestion.AirlinePrefix.toString(),
+                                style: TextStyle(fontSize: 20),
+                              ),
                             );
                           },
                           //suggestionsBoxDecoration: ,
@@ -2684,8 +2847,13 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                             return suggestionsBox;
                           },
                           itemBuilder: (context, Airport suggestion) {
-                            return ListTile(
-                              title: Text(suggestion.CityCode.toString()),
+                            return Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20.0, vertical: 2.0),
+                              child: Text(
+                                suggestion.CityCode.toString(),
+                                style: TextStyle(fontSize: 20),
+                              ),
                             );
                           },
                           // suggestionsBoxDecoration: ,
@@ -3209,235 +3377,237 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
     );
   }
 
-  // saveData() async {
-  //   try {
-  //     // return true;
-  //     errMsgText = "";
-  //     String responseTextUpdated = "";
-  //     bool isValid = false;
-  //
-  //     setState(() {
-  //       isSavingData = true;
-  //     });
-  //
-  //     String walkinTableString = "";
-  //     String finalMawbDropOffTableString = "",
-  //         finalMawbPickUpTableString = "",
-  //         finalHawbTableString = "",
-  //         finalWalkInTableString = "";
-  //
-  //     int iWalkIn = 0;
-  //
-  //     for (WalkinMain u in widget.walkinTable) {
-  //       String a = "{\"driName\": \"${u.driName}\"," +
-  //           "\"driSTA\":\"${u.driSTA}\"," +
-  //           "\"lisNo\":\"${u.lisNo}\"," +
-  //           "\"mobNo\":\"${u.mobNo}\"," +
-  //           "\"email\":\"${u.email}\"," +
-  //           "\"mobNoPrefix\":\"352\"," +
-  //           "\"terminal\":\"${u.terminal}\"," +
-  //           "\"truckCompany\":\"${u.truckCompany}\"," +
-  //           "\"vehType\":\"${u.vehType}\"," +
-  //           "\"vehNo\":\"${u.vehNo}\" }";
-  //       if (iWalkIn == 0)
-  //         walkinTableString = walkinTableString + a;
-  //       else
-  //         walkinTableString = walkinTableString + "," + a;
-  //
-  //       iWalkIn++;
-  //     }
-  //     //  finalWalkInTableString = "[" + walkinTableString + "]";
-  //     finalWalkInTableString = walkinTableString;
-  //     //finalWalkInTableString = json.decode(finalWalkInTableString);
-  //
-  //     if (modeSelected==0) {
-  //       String mawbDropOffTableString = "";
-  //       int iMawbDropOff = 0;
-  //
-  //       for (AWB u in mawbList) {
-  //         String a = "{\"GrWt\": \"${u.grwt}\"," +
-  //             "\"destination\":\"${u.origin}\"," +
-  //             "\"prefix\":\"${u.prefix}\"," +
-  //             "\"mawbNo\":\"${u.mawbno}\"," +
-  //             "\"MAWBId\":${u.index}," +
-  //             "\"NoP\":\"${u.nop}\"," +
-  //             "\"NatureOfGoods\":\"${u.natureofgoods}\"," +
-  //             "\"freightForwarder\":\"${u.ff}\" }";
-  //
-  //         // print("json a");
-  //         // print(a);
-  //         // print(json.decode(a));
-  //         // print(json.encode(a));
-  //         if (iMawbDropOff == 0)
-  //           mawbDropOffTableString = mawbDropOffTableString + a;
-  //         else
-  //           mawbDropOffTableString = mawbDropOffTableString + "," + a;
-  //
-  //         iMawbDropOff++;
-  //       }
-  //       finalMawbDropOffTableString = "[" + mawbDropOffTableString + "]";
-  //       //finalWalkInTableString = json.decode(finalWalkInTableString);
-  //
-  //     } else {
-  //       String mawbPickUpTableString = "";
-  //       int iMawbPickup = 0;
-  //
-  //       for (AWB u in mawbList) {
-  //         String a = "{\"GrWt\": \"${u.grwt}\"," +
-  //             "\"origin\":\"${u.origin}\"," +
-  //             "\"prefix\":\"${u.prefix}\"," +
-  //             "\"mawbNo\":\"${u.mawbno}\"," +
-  //             "\"MAWBId\":${u.index}," +
-  //             "\"NoP\":\"${u.nop}\"," +
-  //             "\"NatureOfGoods\":\"${u.natureofgoods}\"," +
-  //             "\"shipmentType\":\"${u.shiptype}\" }";
-  //
-  //         // print("json a");
-  //         // print(a);
-  //         // print(json.decode(a));
-  //         // print(json.encode(a));
-  //         if (iMawbPickup == 0)
-  //           mawbPickUpTableString = mawbPickUpTableString + a;
-  //         else
-  //           mawbPickUpTableString = mawbPickUpTableString + "," + a;
-  //
-  //         iMawbPickup++;
-  //       }
-  //       finalMawbPickUpTableString = "[" + mawbPickUpTableString + "]";
-  //       //finalWalkInTableString = json.decode(finalWalkInTableString);
-  //
-  //     }
-  //
-  //     if (hawbList.length > 0) {
-  //       String hawbTableString = "";
-  //       int iHawb = 0;
-  //
-  //       for (AWB u in mawbList) {
-  //         String a = "{\"GrWt\": \"${u.grwt}\"," +
-  //             "\"origin\":\"${u.origin}\"," +
-  //             "\"prefix\":\"${u.prefix}\"," +
-  //             "\"mawbNo\":\"${u.mawbno}\"," +
-  //             "\"MAWBId\":${u.index}," +
-  //             "\"hawbNo\":\"${u.mawbno}\"," +
-  //             "\"NoP\":\"${u.nop}\"," +
-  //             "\"NatureOfGoods\":\"${u.natureofgoods}\"," +
-  //             "\"shipmentType\":\"${u.shiptype}\" }";
-  //
-  //         // print("json a");
-  //         // print(a);
-  //         // print(json.decode(a));
-  //         // print(json.encode(a));
-  //         if (iHawb == 0)
-  //           hawbTableString = hawbTableString + a;
-  //         else
-  //           hawbTableString = hawbTableString + "," + a;
-  //
-  //         iHawb++;
-  //       }
-  //       finalHawbTableString = "[" + hawbTableString + "]";
-  //       // finalHawbTableString =  hawbTableString ;
-  //       //finalWalkInTableString = json.decode(finalWalkInTableString);
-  //
-  //     }
-  //
-  //     //import
-  //
-  //     print(json.decode(finalWalkInTableString));
-  //     // print("json.decode(finalHawbTableString)");
-  //     // print(json.decode(finalHawbTableString));
-  //
-  //     if (modeSelected==1) {
-  //       print(json.decode(finalMawbPickUpTableString));
-  //       if (!hawbList.isEmpty) print(json.decode(finalHawbTableString));
-  //     } else {
-  //       print(json.decode(finalMawbDropOffTableString));
-  //     }
-  //
-  //     if (hawbList.isEmpty) {
-  //       finalHawbTableString = "[]";
-  //     }
-  //
-  //     var queryParams = modeSelected==1
-  //         ? hawbList.isEmpty
-  //         ? {
-  //       //import
-  //       "VTData": json.decode(finalWalkInTableString),
-  //       "MAWBData": json.decode(finalMawbPickUpTableString),
-  //       "HawbData": json.decode(finalHawbTableString),
-  //     }
-  //         : {
-  //       //import
-  //       "VTData": json.decode(finalWalkInTableString),
-  //       "MAWBData": json.decode(finalMawbPickUpTableString),
-  //       "HawbData": json.decode(finalHawbTableString),
-  //     }
-  //         : {
-  //       //export
-  //       "VTData": json.decode(finalWalkInTableString),
-  //       "MAWBData": json.decode(finalMawbDropOffTableString),
-  //     };
-  //     await Global()
-  //         .postData(
-  //       modeSelected==1
-  //           ? Settings.SERVICES['SaveImportShipment']
-  //           : Settings.SERVICES['SaveExportShipment'],
-  //       queryParams,
-  //     )
-  //         .then((response) {
-  //       print("data received ");
-  //       print(json.decode(response.body)['d']);
-  //
-  //       if (json.decode(response.body)['d'] != null) {
-  //         var msg = json.decode(response.body)['d'];
-  //         var resp = json.decode(msg).cast<Map<String, dynamic>>();
-  //         isValid = true;
-  //
-  //         List<ResponseMsg> rspMsg = [];
-  //         rspMsg = resp
-  //             .map<ResponseMsg>((json) => ResponseMsg.fromJson(json))
-  //             .toList();
-  //         if (rspMsg.isNotEmpty)
-  //           responseTextUpdated = rspMsg[0].StrMessage.toString();
-  //       }
-  //
-  //       // if (json.decode(response.body)['d'] == null) {
-  //       //   isValid = true;
-  //       // } else {
-  //       //   var responseText = json.decode(response.body)['d'].toString();
-  //
-  //       //   if (responseText.toLowerCase().contains("errormsg")) {
-  //       //     responseTextUpdated =
-  //       //         responseText.toString().replaceAll("ErrorMSG", "");
-  //       //     responseTextUpdated =
-  //       //         responseTextUpdated.toString().replaceAll(":", "");
-  //       //     responseTextUpdated =
-  //       //         responseTextUpdated.toString().replaceAll("\"", "");
-  //       //     responseTextUpdated =
-  //       //         responseTextUpdated.toString().replaceAll("{", "");
-  //       //     responseTextUpdated =
-  //       //         responseTextUpdated.toString().replaceAll("}", "");
-  //       //     print(responseTextUpdated.toString());
-  //       //   }
-  //
-  //       //   isValid = false;
-  //       // }
-  //
-  //       setState(() {
-  //         isSavingData = false;
-  //         if (responseTextUpdated != "") errMsgText = responseTextUpdated;
-  //       });
-  //     }).catchError((onError) {
-  //       setState(() {
-  //         isSavingData = false;
-  //       });
-  //       print(onError);
-  //     });
-  //     return isValid;
-  //   } catch (Exc) {
-  //     print(Exc);
-  //     return false;
-  //   }
-  // }
+  saveData() async {
+    try {
+      // return true;
+      errMsgText = "";
+      String responseTextUpdated = "";
+      bool isValid = false;
+
+      setState(() {
+        isSavingData = true;
+      });
+
+      String walkinTableString = "";
+      String finalMawbDropOffTableString = "",
+          finalMawbPickUpTableString = "",
+          finalHawbTableString = "",
+          finalWalkInTableString = "";
+
+      int iWalkIn = 0;
+
+      // for (WalkinMain u in widget.walkinTable) {
+      //   String a = "{\"driName\": \"${u.driName}\"," +
+      //       "\"driSTA\":\"${u.driSTA}\"," +
+      //       "\"lisNo\":\"${u.lisNo}\"," +
+      //       "\"mobNo\":\"${u.mobNo}\"," +
+      //       "\"email\":\"${u.email}\"," +
+      //       "\"mobNoPrefix\":\"352\"," +
+      //       "\"terminal\":\"${u.terminal}\"," +
+      //       "\"truckCompany\":\"${u.truckCompany}\"," +
+      //       "\"vehType\":\"${u.vehType}\"," +
+      //       "\"vehNo\":\"${u.vehNo}\" }";
+      //   if (iWalkIn == 0)
+      //     walkinTableString = walkinTableString + a;
+      //   else
+      //     walkinTableString = walkinTableString + "," + a;
+      //
+      //   iWalkIn++;
+      // }
+
+      //  finalWalkInTableString = "[" + walkinTableString + "]";
+      finalWalkInTableString = walkinTableString;
+      //finalWalkInTableString = json.decode(finalWalkInTableString);
+
+      if (modeSelected==0) {
+        String mawbDropOffTableString = "";
+        int iMawbDropOff = 0;
+
+        for (AWB u in mawbList) {
+          String a = "{\"GrWt\": \"${u.grwt}\"," +
+              "\"destination\":\"${u.origin}\"," +
+              "\"prefix\":\"${u.prefix}\"," +
+              "\"mawbNo\":\"${u.mawbno}\"," +
+              "\"MAWBId\":${u.index}," +
+              "\"NoP\":\"${u.nop}\"," +
+              "\"NatureOfGoods\":\"${u.natureofgoods}\"," +
+              "\"freightForwarder\":\"${u.ff}\" }";
+
+          // print("json a");
+          // print(a);
+          // print(json.decode(a));
+          // print(json.encode(a));
+          if (iMawbDropOff == 0)
+            mawbDropOffTableString = mawbDropOffTableString + a;
+          else
+            mawbDropOffTableString = mawbDropOffTableString + "," + a;
+
+          iMawbDropOff++;
+        }
+        finalMawbDropOffTableString = "[" + mawbDropOffTableString + "]";
+        //finalWalkInTableString = json.decode(finalWalkInTableString);
+
+      }
+      else {
+        String mawbPickUpTableString = "";
+        int iMawbPickup = 0;
+
+        for (AWB u in mawbList) {
+          String a = "{\"GrWt\": \"${u.grwt}\"," +
+              "\"origin\":\"${u.origin}\"," +
+              "\"prefix\":\"${u.prefix}\"," +
+              "\"mawbNo\":\"${u.mawbno}\"," +
+              "\"MAWBId\":${u.index}," +
+              "\"NoP\":\"${u.nop}\"," +
+              "\"NatureOfGoods\":\"${u.natureofgoods}\"," +
+              "\"shipmentType\":\"${u.shiptype}\" }";
+
+          // print("json a");
+          // print(a);
+          // print(json.decode(a));
+          // print(json.encode(a));
+          if (iMawbPickup == 0)
+            mawbPickUpTableString = mawbPickUpTableString + a;
+          else
+            mawbPickUpTableString = mawbPickUpTableString + "," + a;
+
+          iMawbPickup++;
+        }
+        finalMawbPickUpTableString = "[" + mawbPickUpTableString + "]";
+        //finalWalkInTableString = json.decode(finalWalkInTableString);
+
+      }
+
+      if (hawbList.length > 0) {
+        String hawbTableString = "";
+        int iHawb = 0;
+
+        for (AWB u in mawbList) {
+          String a = "{\"GrWt\": \"${u.grwt}\"," +
+              "\"origin\":\"${u.origin}\"," +
+              "\"prefix\":\"${u.prefix}\"," +
+              "\"mawbNo\":\"${u.mawbno}\"," +
+              "\"MAWBId\":${u.index}," +
+              "\"hawbNo\":\"${u.mawbno}\"," +
+              "\"NoP\":\"${u.nop}\"," +
+              "\"NatureOfGoods\":\"${u.natureofgoods}\"," +
+              "\"shipmentType\":\"${u.shiptype}\" }";
+
+          // print("json a");
+          // print(a);
+          // print(json.decode(a));
+          // print(json.encode(a));
+          if (iHawb == 0)
+            hawbTableString = hawbTableString + a;
+          else
+            hawbTableString = hawbTableString + "," + a;
+
+          iHawb++;
+        }
+        finalHawbTableString = "[" + hawbTableString + "]";
+        // finalHawbTableString =  hawbTableString ;
+        //finalWalkInTableString = json.decode(finalWalkInTableString);
+
+      }
+
+      //import
+
+      print(json.decode(finalWalkInTableString));
+      // print("json.decode(finalHawbTableString)");
+      // print(json.decode(finalHawbTableString));
+
+      if (modeSelected==1) {
+        print(json.decode(finalMawbPickUpTableString));
+        if (!hawbList.isEmpty) print(json.decode(finalHawbTableString));
+      } else {
+        print(json.decode(finalMawbDropOffTableString));
+      }
+
+      if (hawbList.isEmpty) {
+        finalHawbTableString = "[]";
+      }
+
+      var queryParams = modeSelected==1
+          ? hawbList.isEmpty
+          ? {
+        //import
+        "VTData": json.decode(finalWalkInTableString),
+        "MAWBData": json.decode(finalMawbPickUpTableString),
+        "HawbData": json.decode(finalHawbTableString),
+      }
+          : {
+        //import
+        "VTData": json.decode(finalWalkInTableString),
+        "MAWBData": json.decode(finalMawbPickUpTableString),
+        "HawbData": json.decode(finalHawbTableString),
+      }
+          : {
+        //export
+        "VTData": json.decode(finalWalkInTableString),
+        "MAWBData": json.decode(finalMawbDropOffTableString),
+      };
+      await Global()
+          .postData(
+        modeSelected==1
+            ? Settings.SERVICES['SaveImportShipment']
+            : Settings.SERVICES['SaveExportShipment'],
+        queryParams,
+      )
+          .then((response) {
+        print("data received ");
+        print(json.decode(response.body)['d']);
+
+        if (json.decode(response.body)['d'] != null) {
+          var msg = json.decode(response.body)['d'];
+          var resp = json.decode(msg).cast<Map<String, dynamic>>();
+          isValid = true;
+
+          List<ResponseMsg> rspMsg = [];
+          rspMsg = resp
+              .map<ResponseMsg>((json) => ResponseMsg.fromJson(json))
+              .toList();
+          if (rspMsg.isNotEmpty)
+            responseTextUpdated = rspMsg[0].StrMessage.toString();
+        }
+
+        // if (json.decode(response.body)['d'] == null) {
+        //   isValid = true;
+        // } else {
+        //   var responseText = json.decode(response.body)['d'].toString();
+
+        //   if (responseText.toLowerCase().contains("errormsg")) {
+        //     responseTextUpdated =
+        //         responseText.toString().replaceAll("ErrorMSG", "");
+        //     responseTextUpdated =
+        //         responseTextUpdated.toString().replaceAll(":", "");
+        //     responseTextUpdated =
+        //         responseTextUpdated.toString().replaceAll("\"", "");
+        //     responseTextUpdated =
+        //         responseTextUpdated.toString().replaceAll("{", "");
+        //     responseTextUpdated =
+        //         responseTextUpdated.toString().replaceAll("}", "");
+        //     print(responseTextUpdated.toString());
+        //   }
+
+        //   isValid = false;
+        // }
+
+        setState(() {
+          isSavingData = false;
+          if (responseTextUpdated != "") errMsgText = responseTextUpdated;
+        });
+      }).catchError((onError) {
+        setState(() {
+          isSavingData = false;
+        });
+        print(onError);
+      });
+      return isValid;
+    } catch (Exc) {
+      print(Exc);
+      return false;
+    }
+  }
 
   buildMawbPopUpMobile() {
     return Container(
