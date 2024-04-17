@@ -403,6 +403,8 @@ class Settings {
         "/GetImportBookedSlotList", // get list of booked slots import
     "GetBaseStation":"/GetUserBaseStation", // get list of user base station
     "GetBaseStationBranch":"/GetBaseStationWiseBranch", // get base wise terminal
-    "VerifyAirline":"/VerifyAirlineConfiguration"
+    "VerifyAirline":"/VerifyAirlineConfiguration",
+    "VerifyImportShipment":"/VerifyImportShipment",
+    "GetCommodity":"/GetCommodityTypeList"
   };
 }

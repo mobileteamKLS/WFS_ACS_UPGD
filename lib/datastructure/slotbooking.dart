@@ -828,3 +828,52 @@ class ResponseMsg {
     return map;
   }
 }
+
+class VerificationResponseMsg {
+  String requestId;
+  String errorCode;
+  String errorDescription;
+  int nopReceived;
+  double grossWeightReceived;
+  String mawborigin;
+  String airlinePrefix;
+  String mawbNumber;
+  String hawbNumber;
+
+  VerificationResponseMsg({
+    required this.requestId,
+    required this.errorCode,
+    required this.errorDescription,
+    required this.nopReceived,
+    required this.grossWeightReceived,
+    required this.mawborigin,
+    required this.airlinePrefix,
+    required this.mawbNumber,
+    required this.hawbNumber,
+  });
+
+  factory VerificationResponseMsg.fromJson(Map<String, dynamic> json) => VerificationResponseMsg(
+    requestId: json["RequestId"]==null?"":json["RequestId"],
+    errorCode: json["ErrorCode"]==null?"":json["ErrorCode"],
+    errorDescription: json["ErrorDescription"]==null?"":json["ErrorDescription"],
+    nopReceived: json["NOPReceived"]==null?0:json["NOPReceived"],
+    grossWeightReceived: json["GrossWeightReceived"]==null?0.0:json["GrossWeightReceived"],
+    mawborigin: json["MAWBORIGIN"]==null?"":json["MAWBORIGIN"],
+    airlinePrefix: json["AirlinePrefix"]==null?"":json["AirlinePrefix"],
+    mawbNumber: json["MAWBNumber"]==null?"":json["MAWBNumber"],
+    hawbNumber: json["HAWBNumber"]==null?"":json["HAWBNumber"],
+  );
+
+  Map<String, dynamic> toMap() => {
+    "RequestId": requestId,
+    "ErrorCode": errorCode,
+    "ErrorDescription": errorDescription,
+    "NOPReceived": nopReceived,
+    "GrossWeightReceived": grossWeightReceived,
+    "MAWBORIGIN": mawborigin,
+    "AirlinePrefix": airlinePrefix,
+    "MAWBNumber": mawbNumber,
+    "HAWBNumber": hawbNumber,
+  };
+}
+

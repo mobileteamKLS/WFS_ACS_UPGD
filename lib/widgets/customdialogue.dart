@@ -372,6 +372,105 @@ class customAlertMessageDialog extends StatelessWidget {
   }
 }
 
+class CustomAlertMessageDialogNew extends StatelessWidget {
+  final String description, buttonText, imagepath;
+  final bool isMobile;
+  // final Image image;
+
+  CustomAlertMessageDialogNew({
+    required this.description,
+    required this.buttonText,
+    required this.imagepath,
+    required this.isMobile,
+    // required this.image,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Consts.padding),
+      ),
+      elevation: 0.0,
+      backgroundColor: Colors.transparent,
+      child: dialogContent(context),
+    );
+  }
+
+  dialogContent(BuildContext context) {
+    return Stack(
+      children: <Widget>[
+        //...bottom card part,
+
+        Container(
+          width: isMobile
+              ? MediaQuery.of(context).size.width
+              : MediaQuery.of(context).size.width / 2.2,
+          padding: EdgeInsets.only(
+            top: Consts.avatarRadius + Consts.padding,
+            bottom: Consts.padding,
+            left: Consts.padding,
+            right: Consts.padding,
+          ),
+          margin: EdgeInsets.only(top: Consts.avatarRadius),
+          decoration: new BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.rectangle,
+            borderRadius: BorderRadius.circular(Consts.padding),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10.0,
+                offset: const Offset(0.0, 10.0),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // To make the card compact
+            children: <Widget>[
+              SizedBox(height: 16.0),
+              Text(
+                description,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: isMobile ?16.0 : 22,
+                ),
+              ),
+              SizedBox(height: 24.0),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // To close the dialog
+                },
+                child: Text(buttonText),
+              ),
+            ],
+          ),
+        ),
+
+
+        Positioned(
+          left: Consts.padding,
+          right: Consts.padding,
+          child: CircleAvatar(
+            backgroundColor: Colors.blueAccent,
+            radius: Consts.avatarRadius,
+            child: CircleAvatar(
+              backgroundImage: AssetImage(imagepath.toString()),
+              radius: 96,
+            ),
+            // child: Image.asset(
+            //   'assets/images/successstar.gif',
+            //   height: 50.0,
+            //   width: 50.0,
+            // ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class Consts {
   Consts._();
 

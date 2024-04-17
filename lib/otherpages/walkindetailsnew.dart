@@ -13,6 +13,7 @@ import 'package:toggle_switch/toggle_switch.dart';
 
 import '../constants.dart';
 import '../global.dart';
+import '../widgets/headers.dart';
 
 class WalkInAwbDetailsNew extends StatefulWidget {
   //
@@ -160,6 +161,18 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
   String shipmentTypeSelected = "Select";
   String commoditySelected = "Select";
   String errMsgText = "";
+  String modeName = "Drop-off";
+  Map<String,String> rspErrorCodes={
+    "WH":"The HAWB No does not exists. Kindly amend the necessary changes and save again.",
+    "NA":"This AWB or part of this AWB is already delivered. Please try again later.",
+    "NP":"All available PCs have been delivered.",
+    "NF":"No record found for this AWB.",
+    "LH":"The partial delivery of MAWB No. is already completed outside ACS. In order to proceed this AWB enter HAWB’s details.",
+    "LM":"The HAWB No. partially delivered at MAWB level outside ACS. In order to proceed this AWB change shipment type from CONSOL to DIRECT.\N Do you want to proceed to change shipment type to DIRECT ? ",
+    "PF":"You cannot book slot till payment is completed for the selected shipment.",
+    "BF":"You cannot book slot till breakdown is completed for the selected shipment.",
+    "WL":"The location you've entered does not match the freight location.",
+  };
 
   static Future<List<AirlinesPrefix>> getSuggestionsPrefix(String query) async {
     List<AirlinesPrefix> matches = [];
@@ -281,6 +294,105 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             .toList();
         if (rspMsg.isNotEmpty)
           responseTextUpdated = rspMsg[0].StrMessage.toString();
+      }
+      //
+      // airportList =
+      //     resp.map<Airport>((json) => Airport.fromJson(json)).toList();
+      //
+      // print("length baseStationList = " + airportList.length.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
+  }
+
+  responseAlert(errorCode){
+    showDialog(
+      context: context,
+      builder: (BuildContext context) =>
+          CustomAlertMessageDialogNew(
+              description:
+              rspErrorCodes[errorCode]!,
+              buttonText: "Okay",
+              imagepath: 'assets/images/warn.gif',
+              isMobile: useMobileLayout),
+    );
+  }
+
+  verifyAWBDetails() async {
+    String walkinTableString = "";
+    String finalMawbDropOffTableString = "",
+        masterList = "",
+        mawbPickUpTableString = "",
+        finalHawbTableString = "",
+        finalWalkInTableString = "";
+    // String masterArray="";
+    // String houseArray="";
+    for (AWB u in mawbList) {
+      String a = "{\"MAWBId\": \"${u.index}\"," +
+          "\"shipmentType\":\"${u.shiptype.toLowerCase()}\"," +
+          "\"origin\":\"${u.origin}\"," +
+          "\"destination\":\"$selectedBaseStation\"," +
+          "\"MAWBId\":${u.index}," +
+          "\"prefix\":\"${u.nop}\"," +
+          "\"mawbNo\":\"${u.mawbno}\"," +
+          "\"NoP\":\"${u.nop}\"," +
+          "\"GrWt\":\"${u.grwt}\"," +
+          "\"NatureOfGoods\":\"goods\"," +
+          "\"freightForwarder\":\"${u.ff}\"," +
+          "\"CommodityIds\":\"${u.natureofgoods}\"," +
+          "\"GHABranchID\":\"$selectedBaseStationBranchID\" }";
+      mawbPickUpTableString = mawbPickUpTableString + a;
+    }
+    masterList = "[" + mawbPickUpTableString + "]";
+    var queryParams = {
+      "MAWBData":json.decode(masterList),"HAWBData":hawbList
+    };
+    await Global()
+        .postData(
+      Settings.SERVICES['VerifyImportShipment'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+
+      if (json.decode(response.body)['d'] != null) {
+        var msg = json.decode(response.body)['d'];
+        var resp = json.decode(msg).cast<Map<String, dynamic>>();
+      print(resp);
+        List<VerificationResponseMsg> rspMsg = [];
+        rspMsg = resp
+            .map<VerificationResponseMsg>((json) => VerificationResponseMsg.fromJson(json))
+            .toList();
+        if (rspMsg.isNotEmpty){
+          if( rspMsg[0].errorCode=="WH"){
+            responseAlert(rspMsg[0].errorCode);
+          } else if (rspMsg[0].errorCode == "NA") {
+            responseAlert(rspMsg[0].errorCode);
+          } else if (rspMsg[0].errorCode == "NP") {
+            responseAlert(rspMsg[0].errorCode);
+          } else if (rspMsg[0].errorCode == "NF") {
+            responseAlert(rspMsg[0].errorCode);
+          } else if (rspMsg[0].errorCode == "LH") {
+            responseAlert(rspMsg[0].errorCode);
+          } else if (rspMsg[0].errorCode == "LM") {
+            responseAlert(rspMsg[0].errorCode);
+          } else if (rspMsg[0].errorCode == "PF") {
+            responseAlert(rspMsg[0].errorCode);
+          } else if (rspMsg[0].errorCode == "BF") {
+            responseAlert(rspMsg[0].errorCode);
+          } else if (rspMsg[0].errorCode == "WL") {
+            responseAlert(rspMsg[0].errorCode);
+          }
+        }
+
+
       }
       //
       // airportList =
@@ -467,7 +579,9 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
       floatingActionButton: (mawbList.length != 0)
           ? modeSelected == 0
               ? FloatingActionButton.extended(
-                  onPressed: () async {},
+                  onPressed: () async {
+
+                  },
                   label: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32.0),
                     child: const Text('Next',
@@ -479,7 +593,9 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                   backgroundColor: Color(0xFF11249F),
                 )
               : FloatingActionButton.extended(
-                  onPressed: () async {},
+                  onPressed: () async {
+                    verifyAWBDetails();
+                  },
                   label: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32.0),
                     child: const Text('Verify',
@@ -616,14 +732,97 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             //   ),
             // ),
 
-            HeaderClipperWaveMultilineNew(
-                color1: Color(0xFF3383CD),
-                color2: Color(0xFF11249F),
-                headerText: "Enter AWB Details",
-                modeText: modeSelected ,
-                isMobile: useMobileLayout,
-                isWeb: kIsWeb),
+            // HeaderClipperWaveMultilineNew(
+            //     color1: Color(0xFF3383CD),
+            //     color2: Color(0xFF11249F),
+            //     headerText: "Enter AWB Details",
+            //     modeText: modeSelected ,
+            //     isMobile: useMobileLayout,
+            //     isWeb: kIsWeb),
+            ClipPath(
+              //upper clippath with less height
+              clipper: WaveClipper(), //set our custom wave clipper.
+              child: Container(
+                padding: EdgeInsets.only(bottom: 50),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomLeft,
+                    colors: [
+                      Color(0xFF3383CD), //  Color(0xFF3383CD),
+                      Color(0xFF11249F), //   Color(0xFF11249F),
+                    ],
+                  ),
+                ),
+                height: MediaQuery.of(context).size.height / 5, //180,
+                alignment: Alignment.center,
 
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 20.0, top: 30.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: Center(
+                                child: Icon(
+                                  Icons.chevron_left,
+                                  size: useMobileLayout
+                                      ? 40 : kIsWeb ?40 : MediaQuery.of(context).size.width / 18, //56,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 20),
+                            Text(
+                              "Enter AWB Details", // "Walk-in Details ",
+                              style: TextStyle(
+                                  fontSize:kIsWeb ? 48:
+                                  MediaQuery.of(context).size.width / 18, //48,
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // SizedBox(
+                          //   width: isWeb ?  MediaQuery.of(context).size.width / 10 :  MediaQuery.of(context).size.width / 7 ,
+                          //   child: Text(
+                          //     " ", // "Walk-in Details ",
+                          //     style: TextStyle(
+                          //         fontSize:isWeb ? 48:
+                          //             MediaQuery.of(context).size.width / 18, //48,
+                          //         fontWeight: FontWeight.normal,
+                          //         color: Colors.white),
+                          //   ),
+                          // ),
+                          SizedBox(width: 40),
+                          Padding(
+                            padding: const EdgeInsets.only(left:48.0),
+                            child: Text(
+                              " Mode : $modeName ",
+                              style: TextStyle(
+                                  fontSize: kIsWeb ? 32:MediaQuery.of(context).size.width / 22, //48,
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ]),
+              ),
+            ),
             // useMobileLayout
             //     ? Padding(
             //         padding: const EdgeInsets.only(
@@ -795,7 +994,21 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                             modeSelected = index!;
                             addMawb();
                           }
-                         print(modeSelected);
+                         print("$modeSelected====");
+                          if(modeSelected==0){
+                            setState(() {
+                              modeName="Drop-off";
+                            });
+
+                            print("$modeName");
+                          }
+                          else{
+                            setState(() {
+                              modeName="Pick-up";
+                            });
+
+                            print("$modeName");
+                          }
                         });
                       },
                         changeOnTap:mawbList.length == 0?true:false,
@@ -1010,209 +1223,96 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
               ),
             //SizedBox(height: 10),
             if (mawbList.length > 0)
-              Stack(
-                children: [
-                  Expanded(
-                    child: Container(
-
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: useMobileLayout
-                            ? Padding(
-                                padding: EdgeInsets.only(left: 10, right: 10),
-                                child: Container(
-                                  height: 128,
-                                  width: MediaQuery.of(context).size.width / 1.03,
-                                  child: Card(
-                                    child: SizedBox(
-                                      width: MediaQuery.of(context).size.width /
-                                          1.19,
-                                      child: ListView.builder(
-                                        scrollDirection: Axis.horizontal,
-                                        itemBuilder: (BuildContext, index) {
-                                          AWB _awblist =
-                                              mawbList.elementAt(index);
-                                          return buildMawbListMobile(
-                                              _awblist, index);
-                                        },
-                                        itemCount: mawbList.length,
-                                        shrinkWrap: true,
-                                        padding: EdgeInsets.all(5),
-                                      ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: useMobileLayout
+                    ? Padding(
+                        padding: EdgeInsets.only(left: 10, right: 10),
+                        child: Container(
+                          height: 128,
+                          width: MediaQuery.of(context).size.width / 1.03,
+                          child: Card(
+                            child: SizedBox(
+                              width: MediaQuery.of(context).size.width /
+                                  1.19,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemBuilder: (BuildContext, index) {
+                                  AWB _awblist =
+                                      mawbList.elementAt(index);
+                                  return buildMawbListMobile(
+                                      _awblist, index);
+                                },
+                                itemCount: mawbList.length,
+                                shrinkWrap: true,
+                                padding: EdgeInsets.all(5),
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    : modeSelected ==
+                            1 // widget.modeSelected.toLowerCase().contains("pick")
+                        ? Padding(
+                            padding: EdgeInsets.only(left: 40, right: 20),
+                            child: Container(
+                              height: 150,
+                              width:
+                                  MediaQuery.of(context).size.width / 1.1,
+                              child: Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                      top: 10.0,
+                                      bottom: 10.0,
+                                      left: 40.0),
+                                  child: SizedBox(
+                                    width: MediaQuery.of(context)
+                                            .size
+                                            .width /
+                                        1.19,
+                                    child: ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      //rphysics: NeverScrollableScrollPhysics(),
+                                      itemBuilder: (BuildContext, index) {
+                                        AWB _awblist =
+                                            mawbList.elementAt(index);
+                                        return buildMawbListIpad12(
+                                            _awblist, index);
+                                      },
+                                      itemCount: mawbList.length,
+                                      shrinkWrap: true,
+                                      padding: EdgeInsets.all(5),
                                     ),
                                   ),
                                 ),
-                              )
-                            : modeSelected ==
-                                    1 // widget.modeSelected.toLowerCase().contains("pick")
-                                ? Padding(
-                                    padding: EdgeInsets.only(left: 40, right: 20),
-                                    child: Container(
-                                      height: 150,
-                                      width:
-                                          MediaQuery.of(context).size.width / 1.1,
-                                      child: Card(
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                              top: 10.0,
-                                              bottom: 10.0,
-                                              left: 40.0),
-                                          child: SizedBox(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width /
-                                                1.19,
-                                            child: ListView.builder(
-                                              scrollDirection: Axis.horizontal,
-                                              //rphysics: NeverScrollableScrollPhysics(),
-                                              itemBuilder: (BuildContext, index) {
-                                                AWB _awblist =
-                                                    mawbList.elementAt(index);
-                                                return buildMawbListIpad12(
-                                                    _awblist, index);
-                                              },
-                                              itemCount: mawbList.length,
-                                              shrinkWrap: true,
-                                              padding: EdgeInsets.all(5),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : Padding(
-                                    padding: EdgeInsets.only(left: 40, right: 20),
-                                    child: Container(
-                                      // height: 150,
-                                      width:
-                                          MediaQuery.of(context).size.width / 1.1,
-                                      child: SizedBox(
-                                        width: MediaQuery.of(context).size.width /
-                                            1.19,
-                                        child: ListView.builder(
-                                          // scrollDirection: Axis.horizontal,
-                                          physics: NeverScrollableScrollPhysics(),
-                                          itemBuilder: (BuildContext, index) {
-                                            AWB _awblist =
-                                                mawbList.elementAt(index);
-                                            return buildMawbListIpad(
-                                                _awblist, index);
-                                          },
-                                          itemCount: mawbList.length,
-                                          shrinkWrap: true,
-                                          padding: EdgeInsets.all(5),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                      ),
-                    ),
-                  ),
-                  // Positioned(
-                  //   bottom: 10,
-                  //   // left: useMobileLayout ? 20 : 180,
-                  //   child: Container(
-                  //     width: useMobileLayout
-                  //         ? MediaQuery.of(context).size.width
-                  //         : MediaQuery.of(context).size.width,
-                  //     child: (mawbList.length != 0)
-                  //         ? modeSelected == 0
-                  //             ? Row(
-                  //                 mainAxisAlignment: MainAxisAlignment.center,
-                  //                 crossAxisAlignment: CrossAxisAlignment.start,
-                  //                 children: [
-                  //                   ElevatedButton(
-                  //                     onPressed: () {
-                  //                       verifyAirline();
-                  //                     },
-                  //                     style: ButtonStyle(
-                  //                       foregroundColor:
-                  //                           MaterialStateProperty.all(
-                  //                               const Color.fromARGB(
-                  //                                   255, 255, 255, 255)),
-                  //                       backgroundColor:
-                  //                           MaterialStateProperty.all(
-                  //                               const Color.fromARGB(
-                  //                                   255, 1, 36, 159)),
-                  //                       shape: MaterialStateProperty.all<
-                  //                           RoundedRectangleBorder>(
-                  //                         RoundedRectangleBorder(
-                  //                           borderRadius:
-                  //                               BorderRadius.circular(10.0),
-                  //                         ),
-                  //                       ),
-                  //                     ),
-                  //                     child: SizedBox(
-                  //                       width: useMobileLayout
-                  //                           ? MediaQuery.of(context)
-                  //                                   .size
-                  //                                   .width /
-                  //                               2.8
-                  //                           : MediaQuery.of(context)
-                  //                                   .size
-                  //                                   .width /
-                  //                               3.8,
-                  //                       height: useMobileLayout ? 38 : 48,
-                  //                       child: Center(
-                  //                         child: const Text(
-                  //                           "Next",
-                  //                           style: TextStyle(fontSize: 18),
-                  //                         ),
-                  //                       ),
-                  //                     ),
-                  //                   ),
-                  //                 ],
-                  //               )
-                  //             : Row(
-                  //                 mainAxisAlignment: MainAxisAlignment.center,
-                  //                 crossAxisAlignment: CrossAxisAlignment.start,
-                  //                 children: [
-                  //                   ElevatedButton(
-                  //                     onPressed: () {
-                  //                       verifyAirline();
-                  //                     },
-                  //                     style: ButtonStyle(
-                  //                       foregroundColor:
-                  //                           MaterialStateProperty.all(
-                  //                               const Color.fromARGB(
-                  //                                   255, 255, 255, 255)),
-                  //                       backgroundColor:
-                  //                           MaterialStateProperty.all(
-                  //                               const Color.fromARGB(
-                  //                                   255, 1, 36, 159)),
-                  //                       shape: MaterialStateProperty.all<
-                  //                           RoundedRectangleBorder>(
-                  //                         RoundedRectangleBorder(
-                  //                           borderRadius:
-                  //                               BorderRadius.circular(10.0),
-                  //                         ),
-                  //                       ),
-                  //                     ),
-                  //                     child: SizedBox(
-                  //                       width: useMobileLayout
-                  //                           ? MediaQuery.of(context)
-                  //                                   .size
-                  //                                   .width /
-                  //                               2.8
-                  //                           : MediaQuery.of(context)
-                  //                                   .size
-                  //                                   .width /
-                  //                               3.8,
-                  //                       height: useMobileLayout ? 38 : 48,
-                  //                       child: Center(
-                  //                         child: const Text(
-                  //                           "Verify",
-                  //                           style: TextStyle(fontSize: 18),
-                  //                         ),
-                  //                       ),
-                  //                     ),
-                  //                   ),
-                  //                 ],
-                  //               )
-                  //         : SizedBox(),
-                  //   ),
-                  // )
-                ],
+                              ),
+                            ),
+                          )
+                        : Padding(
+                            padding: EdgeInsets.only(left: 40, right: 20),
+                            child: Container(
+                              // height: 150,
+                              width:
+                                  MediaQuery.of(context).size.width / 1.1,
+                              child: SizedBox(
+                                width: MediaQuery.of(context).size.width /
+                                    1.19,
+                                child: ListView.builder(
+                                  // scrollDirection: Axis.horizontal,
+                                  physics: NeverScrollableScrollPhysics(),
+                                  itemBuilder: (BuildContext, index) {
+                                    AWB _awblist =
+                                        mawbList.elementAt(index);
+                                    return buildMawbListIpad(
+                                        _awblist, index);
+                                  },
+                                  itemCount: mawbList.length,
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.all(5),
+                                ),
+                              ),
+                            ),
+                          ),
               ),
             SizedBox(height: 10),
 
@@ -3155,30 +3255,17 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                       ),
                       hint: Text("---- Select ----", style: iPadTextFontStyle),
                       dropdownColor: Colors.white,
-                      value: commoditySelected == ""
-                          ? "Select"
-                          : commoditySelected,
+                      value: selectedBaseForCommId,
                       // "Select",
-                      items: [
-                        'Select',
-                        'General/ GEN',
-                        'Perishable/ PER',
-                        'Dangerous/ DGR',
-                        'Human remains in coffins/ HUM',
-                        'Live animal/ AVI',
-                        'Pharmaceuticals/ PIL',
-                        'Save Human Life/ SHL',
-                        'Living human organs/blood/ LHO',
-                        'Over Dimension/ ODC',
-                      ].map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(
-                            value,
-                            style: iPadTextFontStyle,
-                          ),
-                        );
-                      }).toList(),
+                      items: commodityList
+                          .map((comm) => DropdownMenuItem(
+                        value: comm.shcId,
+                        child: Text(
+                          comm.specialHandlingCode.trim(),
+                          style: iPadTextFontStyle,
+                        ),
+                      ))
+                          .toList(),
                       onChanged: (value) {
                         setState(() {
                           commoditySelected = value.toString();

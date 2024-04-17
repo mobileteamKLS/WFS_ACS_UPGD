@@ -27,7 +27,7 @@ class YardCheckInNew extends StatefulWidget {
 class _YardCheckInNewState extends State<YardCheckInNew> {
   bool useMobileLayout = false, isLoading = false;
   String dropdownValue = "Select";
-  String selectedBaseStation = "Select";
+  // String selectedBaseStation = "Select";
   String selectedBaseStationBranch = "Select";
 
   List<WarehouseBaseStationBranch> dummyList = [
@@ -59,7 +59,45 @@ class _YardCheckInNewState extends State<YardCheckInNew> {
     });
     super.initState();
   }
+  getCommodity(baseStation) async {
+    commodityList=[];
+    Commodity wt = new Commodity(
+      shcId: 0, specialHandlingCode: 'Select', description: '',);
+    commodityList.add(wt);
+    selectedBaseForCommId=0;
+    var queryParams = {"BaseStation":baseStation};
+    await Global()
+        .postData(
+      Settings.SERVICES['GetCommodity'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
 
+      var msg = json.decode(response.body)['d'];
+      var resp = json.decode(msg).cast<Map<String, dynamic>>();
+
+      commodityList = resp
+          .map<Commodity>(
+              (json) => Commodity.fromJson(json))
+          .toList();
+
+      Commodity wt = new Commodity(
+        shcId: 0, specialHandlingCode: 'Select', description: '',);
+      commodityList.add(wt);
+      // commodityList.sort((a, b) => a.cityid.compareTo(b.cityid));
+      print("length baseStationList = " + commodityList.length.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
+  }
   getTerminal() async {
     var queryParams = {'UserId': 0, 'OrganizationId': 0};
     await Global()
@@ -162,6 +200,7 @@ class _YardCheckInNewState extends State<YardCheckInNew> {
 
   changeValue() async {
     await getBaseStationBranch(selectedBaseStationID);
+    await getCommodity(selectedBaseStation);
     print("******* ${baseStationBranchList.toString()} ********");
     setState(() {
       dummyList = baseStationBranchList;
@@ -219,7 +258,9 @@ class _YardCheckInNewState extends State<YardCheckInNew> {
                               onSelected: (bool selected) {
                                 setState(() async {
                                   selectedBaseStationID = (selected ? baseStationList[index].cityid : null)!;
+                                  selectedBaseStation=baseStationList[index].airportcode;
                                   print(selectedBaseStationID);
+                                  print(selectedBaseStation);
                                   await changeValue();
                                   setState(() {});
                                 });
