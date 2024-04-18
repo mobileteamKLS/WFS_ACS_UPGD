@@ -162,16 +162,22 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
   String commoditySelected = "Select";
   String errMsgText = "";
   String modeName = "Drop-off";
-  Map<String,String> rspErrorCodes={
-    "WH":"The HAWB No does not exists. Kindly amend the necessary changes and save again.",
-    "NA":"This AWB or part of this AWB is already delivered. Please try again later.",
-    "NP":"All available PCs have been delivered.",
-    "NF":"No record found for this AWB.",
-    "LH":"The partial delivery of MAWB No. is already completed outside ACS. In order to proceed this AWB enter HAWB’s details.",
-    "LM":"The HAWB No. partially delivered at MAWB level outside ACS. In order to proceed this AWB change shipment type from CONSOL to DIRECT.\N Do you want to proceed to change shipment type to DIRECT ? ",
-    "PF":"You cannot book slot till payment is completed for the selected shipment.",
-    "BF":"You cannot book slot till breakdown is completed for the selected shipment.",
-    "WL":"The location you've entered does not match the freight location.",
+  Map<String, String> rspErrorCodes = {
+    "WH":
+        "The HAWB No does not exists. Kindly amend the necessary changes and save again.",
+    "NA":
+        "This AWB or part of this AWB is already delivered. Please try again later.",
+    "NP": "All available PCs have been delivered.",
+    "NF": "No record found for this AWB.",
+    "LH":
+        "The partial delivery of MAWB No. is already completed outside ACS. In order to proceed this AWB enter HAWB’s details.",
+    "LM":
+        "The HAWB No. partially delivered at MAWB level outside ACS. In order to proceed this AWB change shipment type from CONSOL to DIRECT.\N Do you want to proceed to change shipment type to DIRECT ? ",
+    "PF":
+        "You cannot book slot till payment is completed for the selected shipment.",
+    "BF":
+        "You cannot book slot till breakdown is completed for the selected shipment.",
+    "WL": "The location you've entered does not match the freight location.",
   };
 
   static Future<List<AirlinesPrefix>> getSuggestionsPrefix(String query) async {
@@ -249,30 +255,50 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
     });
   }
 
+  deleteShipment(requestId) async {
+    var queryParams = {"WFSRequestId": requestId};
+    await Global()
+        .postData(
+      Settings.SERVICES['DeleteShipment'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+      var msg = json.decode(response.body)['d'];
+      var resp = json.decode(msg).cast<Map<String, dynamic>>();
+      print("length baseStationList = " + airportList.length.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      print(onError);
+    });
+  }
+
   verifyAirline() async {
-    List<String> mawbPrefixes=[];
-    String mode="";
+    List<String> mawbPrefixes = [];
+    String mode = "";
     errMsgText = "";
     String responseTextUpdated = "";
     bool isValid = false;
 
     //Export or Drop off
-    if(modeSelected==0){
-      mode="E";
-      for (AWB u in mawbList){
+    if (modeSelected == 0) {
+      mode = "E";
+      for (AWB u in mawbList) {
         mawbPrefixes.add(u.prefix);
       }
-    }
-    else{
-      mode="I";
-      for (AWB u in mawbList){
+    } else {
+      mode = "I";
+      for (AWB u in mawbList) {
         mawbPrefixes.add(u.prefix);
       }
     }
     var queryParams = {
-      "Mode":mode,
-      "TerminalId":selectedBaseStationBranchID.toString(),
-      "MAWBPrefix":mawbPrefixes
+      "Mode": mode,
+      "TerminalId": selectedBaseStationBranchID.toString(),
+      "MAWBPrefix": mawbPrefixes
     };
     await Global()
         .postData(
@@ -286,7 +312,6 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
       if (json.decode(response.body)['d'] != null) {
         var msg = json.decode(response.body)['d'];
         var resp = json.decode(msg).cast<Map<String, dynamic>>();
-
 
         List<ResponseMsg> rspMsg = [];
         rspMsg = resp
@@ -311,35 +336,31 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
     });
   }
 
-  responseAlert(errorCode){
+  responseAlert(errorCode) {
     showDialog(
       context: context,
-      builder: (BuildContext context) =>
-          CustomAlertMessageDialogNew(
-              description:
-              rspErrorCodes[errorCode]!,
-              buttonText: "Okay",
-              imagepath: 'assets/images/warn.gif',
-              isMobile: useMobileLayout),
+      builder: (BuildContext context) => CustomAlertMessageDialogNew(
+          description: rspErrorCodes[errorCode]!,
+          buttonText: "Okay",
+          imagepath: 'assets/images/warn.gif',
+          isMobile: useMobileLayout),
     );
   }
 
   verifyAWBDetails() async {
-    String walkinTableString = "";
-    String finalMawbDropOffTableString = "",
-        masterList = "",
+    String masterList = "",
+        houseList = "",
         mawbPickUpTableString = "",
-        finalHawbTableString = "",
-        finalWalkInTableString = "";
-    // String masterArray="";
-    // String houseArray="";
+        shiptype = "",
+        natureofgoods = "",
+        finalHawbTableString = "";
+    int mawbIndex = 0;
     for (AWB u in mawbList) {
-      String a = "{\"MAWBId\": \"${u.index}\"," +
+      String a = "{\"MAWBId\":\"${u.index}\"," +
           "\"shipmentType\":\"${u.shiptype.toLowerCase()}\"," +
           "\"origin\":\"${u.origin}\"," +
           "\"destination\":\"$selectedBaseStation\"," +
-          "\"MAWBId\":${u.index}," +
-          "\"prefix\":\"${u.nop}\"," +
+          "\"prefix\":\"${u.prefix}\"," +
           "\"mawbNo\":\"${u.mawbno}\"," +
           "\"NoP\":\"${u.nop}\"," +
           "\"GrWt\":\"${u.grwt}\"," +
@@ -347,11 +368,45 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
           "\"freightForwarder\":\"${u.ff}\"," +
           "\"CommodityIds\":\"${u.natureofgoods}\"," +
           "\"GHABranchID\":\"$selectedBaseStationBranchID\" }";
+      mawbIndex = u.index;
+      shiptype = u.shiptype;
+      natureofgoods = u.natureofgoods;
       mawbPickUpTableString = mawbPickUpTableString + a;
     }
+
+    if (hawbList.length > 0) {
+      String hawbTableString = "";
+      int iHawb = 0;
+
+      for (AWB u in hawbList) {
+        String a = "{\"MAWBId\":\"$mawbIndex\"," +
+            "\"HAWBId\":\"${u.index}\"," +
+            "\"shipmentType\":\"$shiptype\"," +
+            "\"origin\":\"${u.origin}\"," +
+            "\"destination\":\"$selectedBaseStation\"," +
+            "\"prefix\":\"${u.prefix}\"," +
+            "\"mawbNo\":\"${u.mawbno}\"," +
+            "\"hawbNo\":\"${u.hawbno}\"," +
+            "\"NoP\":\"${u.nop}\"," +
+            "\"GrWt\":\"${u.grwt}\"," +
+            "\"NatureOfGoods\":\"goods\"," +
+            "\"freightForwarder\":\"${u.ff}\"," +
+            "\"CommodityIds\":\"$natureofgoods\"," +
+            "\"GHABranchID\":\"$selectedBaseStationBranchID\" }";
+        if (iHawb == 0)
+          hawbTableString = hawbTableString + a;
+        else
+          hawbTableString = hawbTableString + "," + a;
+
+        iHawb++;
+      }
+      houseList = "[" + hawbTableString + "]";
+    }
+
     masterList = "[" + mawbPickUpTableString + "]";
     var queryParams = {
-      "MAWBData":json.decode(masterList),"HAWBData":hawbList
+      "MAWBData": json.decode(masterList),
+      "HAWBData": json.decode(houseList)
     };
     await Global()
         .postData(
@@ -365,34 +420,42 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
       if (json.decode(response.body)['d'] != null) {
         var msg = json.decode(response.body)['d'];
         var resp = json.decode(msg).cast<Map<String, dynamic>>();
-      print(resp);
+        print(resp);
         List<VerificationResponseMsg> rspMsg = [];
         rspMsg = resp
-            .map<VerificationResponseMsg>((json) => VerificationResponseMsg.fromJson(json))
+            .map<VerificationResponseMsg>(
+                (json) => VerificationResponseMsg.fromJson(json))
             .toList();
-        if (rspMsg.isNotEmpty){
-          if( rspMsg[0].errorCode=="WH"){
+        if (rspMsg.isNotEmpty) {
+          if (rspMsg[0].errorCode == "WH") {
             responseAlert(rspMsg[0].errorCode);
+            deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "NA") {
             responseAlert(rspMsg[0].errorCode);
+            deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "NP") {
             responseAlert(rspMsg[0].errorCode);
+            deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "NF") {
             responseAlert(rspMsg[0].errorCode);
+            deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "LH") {
             responseAlert(rspMsg[0].errorCode);
+            deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "LM") {
             responseAlert(rspMsg[0].errorCode);
+            deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "PF") {
             responseAlert(rspMsg[0].errorCode);
+            deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "BF") {
             responseAlert(rspMsg[0].errorCode);
+            deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "WL") {
             responseAlert(rspMsg[0].errorCode);
+            deleteShipment(rspMsg[0].requestId);
           }
         }
-
-
       }
       //
       // airportList =
@@ -579,9 +642,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
       floatingActionButton: (mawbList.length != 0)
           ? modeSelected == 0
               ? FloatingActionButton.extended(
-                  onPressed: () async {
-
-                  },
+                  onPressed: () async {},
                   label: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32.0),
                     child: const Text('Next',
@@ -754,7 +815,8 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                     ],
                   ),
                 ),
-                height: MediaQuery.of(context).size.height / 5, //180,
+                height: MediaQuery.of(context).size.height / 5,
+                //180,
                 alignment: Alignment.center,
 
                 child: Column(
@@ -775,7 +837,11 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                                 child: Icon(
                                   Icons.chevron_left,
                                   size: useMobileLayout
-                                      ? 40 : kIsWeb ?40 : MediaQuery.of(context).size.width / 18, //56,
+                                      ? 40
+                                      : kIsWeb
+                                          ? 40
+                                          : MediaQuery.of(context).size.width /
+                                              18, //56,
                                   color: Colors.white,
                                 ),
                               ),
@@ -784,8 +850,10 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                             Text(
                               "Enter AWB Details", // "Walk-in Details ",
                               style: TextStyle(
-                                  fontSize:kIsWeb ? 48:
-                                  MediaQuery.of(context).size.width / 18, //48,
+                                  fontSize: kIsWeb
+                                      ? 48
+                                      : MediaQuery.of(context).size.width /
+                                          18, //48,
                                   fontWeight: FontWeight.normal,
                                   color: Colors.white),
                             ),
@@ -809,11 +877,14 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                           // ),
                           SizedBox(width: 40),
                           Padding(
-                            padding: const EdgeInsets.only(left:48.0),
+                            padding: const EdgeInsets.only(left: 48.0),
                             child: Text(
                               " Mode : $modeName ",
                               style: TextStyle(
-                                  fontSize: kIsWeb ? 32:MediaQuery.of(context).size.width / 22, //48,
+                                  fontSize: kIsWeb
+                                      ? 32
+                                      : MediaQuery.of(context).size.width /
+                                          22, //48,
                                   fontWeight: FontWeight.normal,
                                   color: Colors.white),
                             ),
@@ -939,12 +1010,12 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             //     :
             if (!useMobileLayout)
               Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(left:42.0, top: 8.0,bottom: 16.0),
+                    padding: const EdgeInsets.only(
+                        left: 42.0, top: 8.0, bottom: 16.0),
                     child: ToggleSwitch(
-
                       minWidth: useMobileLayout
                           ? MediaQuery.of(context).size.width / 3
                           : MediaQuery.of(context).size.width / 4.5,
@@ -994,27 +1065,26 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                             modeSelected = index!;
                             addMawb();
                           }
-                         print("$modeSelected====");
-                          if(modeSelected==0){
+                          print("$modeSelected====");
+                          if (modeSelected == 0) {
                             setState(() {
-                              modeName="Drop-off";
+                              modeName = "Drop-off";
                             });
 
                             print("$modeName");
-                          }
-                          else{
+                          } else {
                             setState(() {
-                              modeName="Pick-up";
+                              modeName = "Pick-up";
                             });
 
                             print("$modeName");
                           }
                         });
                       },
-                        changeOnTap:mawbList.length == 0?true:false,
+                      changeOnTap: mawbList.length == 0 ? true : false,
                     ),
                   ),
-                  (mawbList.length == 0 || modeSelected==1)
+                  (mawbList.length == 0 || modeSelected == 1)
                       ? SizedBox()
                       : Container(
                           padding: EdgeInsets.all(8.0),
@@ -1233,15 +1303,12 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                           width: MediaQuery.of(context).size.width / 1.03,
                           child: Card(
                             child: SizedBox(
-                              width: MediaQuery.of(context).size.width /
-                                  1.19,
+                              width: MediaQuery.of(context).size.width / 1.19,
                               child: ListView.builder(
                                 scrollDirection: Axis.horizontal,
                                 itemBuilder: (BuildContext, index) {
-                                  AWB _awblist =
-                                      mawbList.elementAt(index);
-                                  return buildMawbListMobile(
-                                      _awblist, index);
+                                  AWB _awblist = mawbList.elementAt(index);
+                                  return buildMawbListMobile(_awblist, index);
                                 },
                                 itemCount: mawbList.length,
                                 shrinkWrap: true,
@@ -1257,18 +1324,13 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                             padding: EdgeInsets.only(left: 40, right: 20),
                             child: Container(
                               height: 150,
-                              width:
-                                  MediaQuery.of(context).size.width / 1.1,
+                              width: MediaQuery.of(context).size.width / 1.1,
                               child: Card(
                                 child: Padding(
                                   padding: const EdgeInsets.only(
-                                      top: 10.0,
-                                      bottom: 10.0,
-                                      left: 40.0),
+                                      top: 10.0, bottom: 10.0, left: 40.0),
                                   child: SizedBox(
-                                    width: MediaQuery.of(context)
-                                            .size
-                                            .width /
+                                    width: MediaQuery.of(context).size.width /
                                         1.19,
                                     child: ListView.builder(
                                       scrollDirection: Axis.horizontal,
@@ -1292,19 +1354,15 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                             padding: EdgeInsets.only(left: 40, right: 20),
                             child: Container(
                               // height: 150,
-                              width:
-                                  MediaQuery.of(context).size.width / 1.1,
+                              width: MediaQuery.of(context).size.width / 1.1,
                               child: SizedBox(
-                                width: MediaQuery.of(context).size.width /
-                                    1.19,
+                                width: MediaQuery.of(context).size.width / 1.19,
                                 child: ListView.builder(
                                   // scrollDirection: Axis.horizontal,
                                   physics: NeverScrollableScrollPhysics(),
                                   itemBuilder: (BuildContext, index) {
-                                    AWB _awblist =
-                                        mawbList.elementAt(index);
-                                    return buildMawbListIpad(
-                                        _awblist, index);
+                                    AWB _awblist = mawbList.elementAt(index);
+                                    return buildMawbListIpad(_awblist, index);
                                   },
                                   itemCount: mawbList.length,
                                   shrinkWrap: true,
@@ -3259,12 +3317,12 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                       // "Select",
                       items: commodityList
                           .map((comm) => DropdownMenuItem(
-                        value: comm.shcId,
-                        child: Text(
-                          comm.specialHandlingCode.trim(),
-                          style: iPadTextFontStyle,
-                        ),
-                      ))
+                                value: comm.shcId,
+                                child: Text(
+                                  comm.specialHandlingCode.trim(),
+                                  style: iPadTextFontStyle,
+                                ),
+                              ))
                           .toList(),
                       onChanged: (value) {
                         setState(() {
@@ -3506,7 +3564,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
       finalWalkInTableString = walkinTableString;
       //finalWalkInTableString = json.decode(finalWalkInTableString);
 
-      if (modeSelected==0) {
+      if (modeSelected == 0) {
         String mawbDropOffTableString = "";
         int iMawbDropOff = 0;
 
@@ -3533,9 +3591,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
         }
         finalMawbDropOffTableString = "[" + mawbDropOffTableString + "]";
         //finalWalkInTableString = json.decode(finalWalkInTableString);
-
-      }
-      else {
+      } else {
         String mawbPickUpTableString = "";
         int iMawbPickup = 0;
 
@@ -3562,7 +3618,6 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
         }
         finalMawbPickUpTableString = "[" + mawbPickUpTableString + "]";
         //finalWalkInTableString = json.decode(finalWalkInTableString);
-
       }
 
       if (hawbList.length > 0) {
@@ -3594,7 +3649,6 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
         finalHawbTableString = "[" + hawbTableString + "]";
         // finalHawbTableString =  hawbTableString ;
         //finalWalkInTableString = json.decode(finalWalkInTableString);
-
       }
 
       //import
@@ -3603,7 +3657,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
       // print("json.decode(finalHawbTableString)");
       // print(json.decode(finalHawbTableString));
 
-      if (modeSelected==1) {
+      if (modeSelected == 1) {
         print(json.decode(finalMawbPickUpTableString));
         if (!hawbList.isEmpty) print(json.decode(finalHawbTableString));
       } else {
@@ -3614,28 +3668,28 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
         finalHawbTableString = "[]";
       }
 
-      var queryParams = modeSelected==1
+      var queryParams = modeSelected == 1
           ? hawbList.isEmpty
-          ? {
-        //import
-        "VTData": json.decode(finalWalkInTableString),
-        "MAWBData": json.decode(finalMawbPickUpTableString),
-        "HawbData": json.decode(finalHawbTableString),
-      }
+              ? {
+                  //import
+                  "VTData": json.decode(finalWalkInTableString),
+                  "MAWBData": json.decode(finalMawbPickUpTableString),
+                  "HawbData": json.decode(finalHawbTableString),
+                }
+              : {
+                  //import
+                  "VTData": json.decode(finalWalkInTableString),
+                  "MAWBData": json.decode(finalMawbPickUpTableString),
+                  "HawbData": json.decode(finalHawbTableString),
+                }
           : {
-        //import
-        "VTData": json.decode(finalWalkInTableString),
-        "MAWBData": json.decode(finalMawbPickUpTableString),
-        "HawbData": json.decode(finalHawbTableString),
-      }
-          : {
-        //export
-        "VTData": json.decode(finalWalkInTableString),
-        "MAWBData": json.decode(finalMawbDropOffTableString),
-      };
+              //export
+              "VTData": json.decode(finalWalkInTableString),
+              "MAWBData": json.decode(finalMawbDropOffTableString),
+            };
       await Global()
           .postData(
-        modeSelected==1
+        modeSelected == 1
             ? Settings.SERVICES['SaveImportShipment']
             : Settings.SERVICES['SaveExportShipment'],
         queryParams,
@@ -4853,14 +4907,14 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
               //textColor: Colors.black,
 
               onPressed: () {
-                var masterNo = txtMawbnoM.text.substring(0, 7);
-                var modValue = int.parse(masterNo) % 7;
-                var validMaster = masterNo + modValue.toString();
-                if (txtMawbnoM.text.length != 8 ||
-                    txtMawbnoM.text != validMaster) {
-                  txtMawbnoM.text = "";
-                  return;
-                }
+                // var masterNo = txtMawbnoM.text.substring(0, 7);
+                // var modValue = int.parse(masterNo) % 7;
+                // var validMaster = masterNo + modValue.toString();
+                // if (txtMawbnoM.text.length != 8 ||
+                //     txtMawbnoM.text != validMaster) {
+                //   txtMawbnoM.text = "";
+                //   return;
+                // }
                 AWB _newHawbRow = new AWB(
                     shiptype: shipmentTypeSelected,
                     origin: txtOriginH.text,

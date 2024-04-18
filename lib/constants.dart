@@ -405,6 +405,7 @@ class Settings {
     "GetBaseStationBranch":"/GetBaseStationWiseBranch", // get base wise terminal
     "VerifyAirline":"/VerifyAirlineConfiguration",
     "VerifyImportShipment":"/VerifyImportShipment",
-    "GetCommodity":"/GetCommodityTypeList"
+    "GetCommodity":"/GetCommodityTypeList",
+    "DeleteShipment":"/DeleteImportShipment"
   };
 }
