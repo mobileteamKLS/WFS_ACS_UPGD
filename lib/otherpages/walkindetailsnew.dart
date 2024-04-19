@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:luxair/datastructure/vehicletoken.dart';
+import 'package:luxair/otherpages/walkinnew.dart';
 import 'package:luxair/widgets/customdialogue.dart';
 import 'package:luxair/widgets/headerclipper.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:toggle_switch/toggle_switch.dart';
 
 import '../constants.dart';
+import '../datastructure/airwaybill.dart';
 import '../global.dart';
 import '../widgets/headers.dart';
 
@@ -26,108 +28,7 @@ class WalkInAwbDetailsNew extends StatefulWidget {
   State<WalkInAwbDetailsNew> createState() => _WalkInAwbDetailsNewState();
 }
 
-class AWB {
-  String shiptype;
-  String origin;
 
-  String prefix;
-  String mawbno;
-  String hawbno;
-  String nop;
-  String grwt;
-  String natureofgoods;
-  String ff;
-  bool isselect;
-  int index;
-
-  AWB(
-      {required this.shiptype,
-      required this.origin,
-      required this.prefix,
-      required this.mawbno,
-      required this.hawbno,
-      required this.nop,
-      required this.grwt,
-      required this.natureofgoods,
-      required this.isselect,
-      required this.ff,
-      required this.index});
-}
-
-class HAWB {
-  // String GrWt;
-
-  String GrWt;
-  int MAWBId;
-  int HAWBId;
-  String NatureOfGoods;
-  String NoP;
-  String hawbNo;
-  String mawbNo;
-
-  String origin;
-  String prefix;
-
-  HAWB({
-    required this.GrWt,
-    required this.origin,
-    required this.prefix,
-    required this.mawbNo,
-    required this.hawbNo,
-    required this.MAWBId,
-    required this.HAWBId,
-    required this.NoP,
-    required this.NatureOfGoods,
-  });
-}
-
-class MAWB {
-  // String GrWt;
-
-  String GrWt;
-  int MAWBId;
-  String NatureOfGoods;
-  String NoP;
-  String mawbNo;
-  String origin;
-  String prefix;
-  String shipmentType;
-
-  MAWB({
-    required this.GrWt,
-    required this.origin,
-    required this.prefix,
-    required this.mawbNo,
-    required this.MAWBId,
-    required this.NoP,
-    required this.NatureOfGoods,
-    required this.shipmentType,
-  });
-}
-
-class MAWBDropoff {
-  // String GrWt;
-
-  String GrWt;
-  int MAWBId;
-  String NatureOfGoods;
-  String NoP;
-  String mawbNo;
-  String destination;
-  String prefix;
-  String freightForwarder;
-
-  MAWBDropoff({
-    required this.GrWt,
-    required this.destination,
-    required this.prefix,
-    required this.mawbNo,
-    required this.MAWBId,
-    required this.NoP,
-    required this.NatureOfGoods,
-    required this.freightForwarder,
-  });
-}
 
 class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
   int modeSelected = 0;
@@ -313,12 +214,22 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
         var msg = json.decode(response.body)['d'];
         var resp = json.decode(msg).cast<Map<String, dynamic>>();
 
-        List<ResponseMsg> rspMsg = [];
+        List<VerificationMsg> rspMsg = [];
         rspMsg = resp
-            .map<ResponseMsg>((json) => ResponseMsg.fromJson(json))
+            .map<VerificationMsg>((json) => VerificationMsg.fromJson(json))
             .toList();
         if (rspMsg.isNotEmpty)
-          responseTextUpdated = rspMsg[0].StrMessage.toString();
+          if(rspMsg[0].Status=="S"){
+            Navigator.push(
+              context,
+            MaterialPageRoute(builder: (context) => WalkInCustomerNew(mawbList: mawbList,mode: modeSelected,)),
+          );
+          }
+        else{
+            responseTextUpdated = rspMsg[0].StrMessage.toString();
+            responseAlert(rspMsg[0].StrMessage.toString());
+          }
+
       }
       //
       // airportList =
@@ -340,7 +251,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
     showDialog(
       context: context,
       builder: (BuildContext context) => CustomAlertMessageDialogNew(
-          description: rspErrorCodes[errorCode]!,
+          description: errorCode,
           buttonText: "Okay",
           imagepath: 'assets/images/warn.gif',
           isMobile: useMobileLayout),
@@ -428,31 +339,31 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             .toList();
         if (rspMsg.isNotEmpty) {
           if (rspMsg[0].errorCode == "WH") {
-            responseAlert(rspMsg[0].errorCode);
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
             deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "NA") {
-            responseAlert(rspMsg[0].errorCode);
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
             deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "NP") {
-            responseAlert(rspMsg[0].errorCode);
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
             deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "NF") {
-            responseAlert(rspMsg[0].errorCode);
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
             deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "LH") {
-            responseAlert(rspMsg[0].errorCode);
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
             deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "LM") {
-            responseAlert(rspMsg[0].errorCode);
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
             deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "PF") {
-            responseAlert(rspMsg[0].errorCode);
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
             deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "BF") {
-            responseAlert(rspMsg[0].errorCode);
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
             deleteShipment(rspMsg[0].requestId);
           } else if (rspMsg[0].errorCode == "WL") {
-            responseAlert(rspMsg[0].errorCode);
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
             deleteShipment(rspMsg[0].requestId);
           }
         }
@@ -642,7 +553,9 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
       floatingActionButton: (mawbList.length != 0)
           ? modeSelected == 0
               ? FloatingActionButton.extended(
-                  onPressed: () async {},
+                  onPressed: () async {
+                    verifyAirline();
+                  },
                   label: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32.0),
                     child: const Text('Next',

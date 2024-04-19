@@ -302,7 +302,7 @@ class Settings {
   //     "https://yvruatsrv.kalelogistics.com/srvMobile.asmx";
   // static const String ACSWFSServiceURL =
   //     "https://yvruatsrv.kalelogistics.com/srvMobile.asmx";
-  
+
 
   //YVRA LIVE LINK PROVIDED ON 04-DEC-2022 -  this is for YVRA
 
@@ -320,10 +320,10 @@ class Settings {
 
   // https://bostonacssrvuat.kalelogistics.com/Luxair/srvMobile.asmx
   //
-  // LUXEMBERG LIVE LINK PROVIDED ON 11-JAN-2023 
-  
+  // LUXEMBERG LIVE LINK PROVIDED ON 11-JAN-2023
+
   // static const String ACSServiceURL =
-  //     "https://bostonacssrvuat.kalelogistics.com/Luxair/srvMobile.asmx"; 
+  //     "https://bostonacssrvuat.kalelogistics.com/Luxair/srvMobile.asmx";
   // static const String ACSServiceImageURL =
   //     'https://bostonacssrvuat.kalelogistics.com/';
   // static const String loginUrl =
@@ -406,6 +406,7 @@ class Settings {
     "VerifyAirline":"/VerifyAirlineConfiguration",
     "VerifyImportShipment":"/VerifyImportShipment",
     "GetCommodity":"/GetCommodityTypeList",
-    "DeleteShipment":"/DeleteImportShipment"
+    "DeleteShipment":"/DeleteImportShipment",
+    "SaveExportData":"/SaveExportVTData",
   };
 }

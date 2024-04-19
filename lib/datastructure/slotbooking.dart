@@ -828,6 +828,30 @@ class ResponseMsg {
     return map;
   }
 }
+class VerificationMsg {
+  final String Status;
+  final String StrMessage;
+
+  VerificationMsg({
+    required this.Status,
+    required this.StrMessage,
+  });
+
+  factory VerificationMsg.fromJson(Map<String, dynamic> json) {
+    return VerificationMsg(
+      Status: json['Status'] == null ? "" : json['Status'],
+      StrMessage: json['Message'] == null ? "" : json['Message'],
+    );
+  }
+
+  Map toMap() {
+    var map = new Map<String, dynamic>();
+    map["Status"] = Status;
+    map["StrMessage"] = StrMessage;
+    return map;
+  }
+}
+
 
 class VerificationResponseMsg {
   String requestId;
