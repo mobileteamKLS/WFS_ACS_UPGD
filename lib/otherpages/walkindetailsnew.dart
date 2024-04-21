@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:luxair/dashboards/homescreen.dart';
 import 'package:luxair/datastructure/slotbooking.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +32,7 @@ class WalkInAwbDetailsNew extends StatefulWidget {
 class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
   int modeSelected = 0;
   String selectedMawbNo = "", selectedOrigin = "", selectedPrefix = "";
-  bool useMobileLayout = false, isLoading = false, isSavingData = false;
+  bool useMobileLayout = false, isLoading = false, isSavingData = false,isVerified=false;
   TextEditingController txtOriginM = new TextEditingController();
   TextEditingController txtPrefixM = new TextEditingController();
   TextEditingController txtMawbnoM = new TextEditingController();
@@ -53,7 +52,10 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
 
   List<AWB> hawbListToBind = [];
   List<AWB> mawbList = [];
+  // List<AWB> mawbListPickUP = [];
   List<AWB> hawbList = [];
+  List<AWB>verifiedMawbList=[];
+  List<AWB>verifiedHawbList=[];
 
   List<MAWB> mawbListSave = [];
   List<MAWBDropoff> mawbDropOffListSave = [];
@@ -177,7 +179,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
     });
   }
 
-  verifyAirline() async {
+   verifyAirline() async {
     List<String> mawbPrefixes = [];
     String mode = "";
     errMsgText = "";
@@ -192,7 +194,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
       }
     } else {
       mode = "I";
-      for (AWB u in mawbList) {
+      for (AWB u in verifiedMawbList                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ) {
         mawbPrefixes.add(u.prefix);
       }
     }
@@ -264,8 +266,10 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
         mawbPickUpTableString = "",
         shiptype = "",
         natureofgoods = "",
-        finalHawbTableString = "";
+        finalHawbTableString = "",
+        hawbTableString = "";
     int mawbIndex = 0;
+
     for (AWB u in mawbList) {
       String a = "{\"MAWBId\":\"${u.index}\"," +
           "\"shipmentType\":\"${u.shiptype.toLowerCase()}\"," +
@@ -276,7 +280,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
           "\"NoP\":\"${u.nop}\"," +
           "\"GrWt\":\"${u.grwt}\"," +
           "\"NatureOfGoods\":\"goods\"," +
-          "\"freightForwarder\":\"${u.ff}\"," +
+          "\"freightForwarder\":\"ff\"," +
           "\"CommodityIds\":\"${u.natureofgoods}\"," +
           "\"GHABranchID\":\"$selectedBaseStationBranchID\" }";
       mawbIndex = u.index;
@@ -286,7 +290,6 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
     }
 
     if (hawbList.length > 0) {
-      String hawbTableString = "";
       int iHawb = 0;
 
       for (AWB u in hawbList) {
@@ -301,7 +304,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             "\"NoP\":\"${u.nop}\"," +
             "\"GrWt\":\"${u.grwt}\"," +
             "\"NatureOfGoods\":\"goods\"," +
-            "\"freightForwarder\":\"${u.ff}\"," +
+            "\"freightForwarder\":\"ff\"," +
             "\"CommodityIds\":\"$natureofgoods\"," +
             "\"GHABranchID\":\"$selectedBaseStationBranchID\" }";
         if (iHawb == 0)
@@ -311,10 +314,10 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
 
         iHawb++;
       }
-      houseList = "[" + hawbTableString + "]";
     }
 
     masterList = "[" + mawbPickUpTableString + "]";
+    houseList = "[" + hawbTableString + "]";
     var queryParams = {
       "MAWBData": json.decode(masterList),
       "HAWBData": json.decode(houseList)
@@ -365,6 +368,15 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
           } else if (rspMsg[0].errorCode == "WL") {
             responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
             deleteShipment(rspMsg[0].requestId);
+          }
+          else{
+            verifiedMawbList.add(mawbList[0]);
+            verifiedHawbList=hawbList;
+            setState(() {
+              isVerified=true;
+            });
+
+            print(isVerified);
           }
         }
       }
@@ -550,8 +562,8 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
     var smallestDimension = MediaQuery.of(context).size.shortestSide;
     useMobileLayout = smallestDimension < 600;
     return Scaffold(
-      floatingActionButton: (mawbList.length != 0)
-          ? modeSelected == 0
+      floatingActionButton: (mawbList.length != 0 )
+          ? modeSelected == 0 || isVerified
               ? FloatingActionButton.extended(
                   onPressed: () async {
                     verifyAirline();
@@ -997,7 +1009,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                       changeOnTap: mawbList.length == 0 ? true : false,
                     ),
                   ),
-                  (mawbList.length == 0 || modeSelected == 1)
+                  (mawbList.length == 0 || !isVerified)
                       ? SizedBox()
                       : Container(
                           padding: EdgeInsets.all(8.0),
@@ -1205,7 +1217,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                 ),
               ),
             //SizedBox(height: 10),
-            if (mawbList.length > 0)
+            if (mawbList.length > 0 )
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: useMobileLayout
@@ -1233,36 +1245,71 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                       )
                     : modeSelected ==
                             1 // widget.modeSelected.toLowerCase().contains("pick")
-                        ? Padding(
-                            padding: EdgeInsets.only(left: 40, right: 20),
-                            child: Container(
-                              height: 150,
-                              width: MediaQuery.of(context).size.width / 1.1,
-                              child: Card(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                      top: 10.0, bottom: 10.0, left: 40.0),
-                                  child: SizedBox(
-                                    width: MediaQuery.of(context).size.width /
-                                        1.19,
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      //rphysics: NeverScrollableScrollPhysics(),
-                                      itemBuilder: (BuildContext, index) {
-                                        AWB _awblist =
-                                            mawbList.elementAt(index);
-                                        return buildMawbListIpad12(
-                                            _awblist, index);
-                                      },
-                                      itemCount: mawbList.length,
-                                      shrinkWrap: true,
-                                      padding: EdgeInsets.all(5),
+                        ? isVerified
+                            ? Padding(
+                                padding: EdgeInsets.only(left: 40, right: 20),
+                                child: Container(
+                                  height: 150,
+                                  width:
+                                      MediaQuery.of(context).size.width / 1.1,
+                                  child: Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          top: 10.0, bottom: 10.0, left: 40.0),
+                                      child: SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width /
+                                                1.19,
+                                        child: ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          //rphysics: NeverScrollableScrollPhysics(),
+                                          itemBuilder: (BuildContext, index) {
+                                            AWB _awblist =
+                                                verifiedMawbList.elementAt(index);
+                                            return buildMawbListIpad12(
+                                                _awblist, index);
+                                          },
+                                          itemCount: verifiedMawbList.length,
+                                          shrinkWrap: true,
+                                          padding: EdgeInsets.all(5),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          )
+                              )
+                            : Padding(
+                                padding: EdgeInsets.only(left: 40, right: 20),
+                                child: Container(
+                                  height: 150,
+                                  width:
+                                      MediaQuery.of(context).size.width / 1.1,
+                                  child: Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          top: 10.0, bottom: 10.0, left: 40.0),
+                                      child: SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width /
+                                                1.19,
+                                        child: ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          //rphysics: NeverScrollableScrollPhysics(),
+                                          itemBuilder: (BuildContext, index) {
+                                            AWB _awblist =
+                                            mawbList.elementAt(index);
+                                            return buildMawbListIpad12(
+                                                _awblist, index);
+                                          },
+                                          itemCount: mawbList.length,
+                                          shrinkWrap: true,
+                                          padding: EdgeInsets.all(5),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
                         : Padding(
                             padding: EdgeInsets.only(left: 40, right: 20),
                             child: Container(
@@ -1387,9 +1434,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             //       )
             //     :
 
-            if (mawbList.length > 0 && modeSelected == 1
-                // widget.modeSelected.toLowerCase().contains("pick")
-                )
+            if ((mawbList.length > 0 ) && modeSelected == 1)
               Expanded(
                 flex: 0,
                 child: Padding(
@@ -3375,7 +3420,16 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                 //     index: mawbList.length);
 
                 print("_newMawbRow.index ==" + _newMawbRow.index.toString());
-                mawbList.add(_newMawbRow);
+                if(modeSelected==1){
+                  mawbList=[];
+                  mawbList.add(_newMawbRow);
+                  isVerified=false;
+                  print("Added $isVerified");
+                }
+                else{
+                  mawbList.add(_newMawbRow);
+                }
+
 
                 setState(() {
                   selectedMawbNo = txtMawbnoM.text;
@@ -4617,7 +4671,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                       borderRadius: BorderRadius.circular(4.0),
                     ),
                     child: TextField(
-                      maxLength: 10,
+                      maxLength: 11,
                       keyboardType: TextInputType.text,
                       textCapitalization: TextCapitalization.characters,
                       controller: txthawbnoH,
