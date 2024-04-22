@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_switch/flutter_advanced_switch.dart';
 import 'package:luxair/datastructure/slotbooking.dart';
+import 'package:luxair/otherpages/yardcheckinnew.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 import 'package:luxair/datastructure/vehicletoken.dart';
 import 'package:luxair/global.dart';
@@ -13,6 +14,7 @@ import 'package:luxair/widgets/headers.dart';
 
 import '../constants.dart';
 import '../datastructure/airwaybill.dart';
+import '../widgets/customdialogue.dart';
 
 class WalkInCustomerNew extends StatefulWidget {
   final List<AWB> mawbList;
@@ -80,6 +82,21 @@ class _WalkInCustomerNewState extends State<WalkInCustomerNew> {
 
     super.dispose();
   }
+  responseAlert(errorCode) async{
+    var userSelection = await showDialog(
+      context: context,
+      builder: (BuildContext context) => CustomAlertMessageDialogNew(
+          description: errorCode,
+          buttonText: "Okay",
+          imagepath: 'assets/images/successchk.gif',
+          isMobile: useMobileLayout),
+    );
+    print("userSelection ==" + userSelection.toString());
+    if(userSelection){
+      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(
+          builder: (context) => YardCheckInNew()), (Route route) => false);
+    }
+  }
    generateVT(mawbData,vtData) async {
      if (modeSelected == 0) {
 
@@ -103,14 +120,12 @@ class _WalkInCustomerNewState extends State<WalkInCustomerNew> {
 
          List<ResponseMsg> rspMsg = [];
          rspMsg = resp
-             .map<ResponseMsg>((json) => VerificationMsg.fromJson(json))
+             .map<ResponseMsg>((json) => ResponseMsg.fromJson(json))
              .toList();
          if (rspMsg.isNotEmpty)
            if(rspMsg[0].Status=="S"){
-             // Navigator.push(
-             //   context,
-             //   MaterialPageRoute(builder: (context) => WalkInCustomerNew(mawbList: mawbList,modeSelected: modeSelected,)),
-             // );
+             responseAlert(rspMsg[0].StrMessage);
+
            }
            else{
 

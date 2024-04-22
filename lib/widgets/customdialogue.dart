@@ -406,7 +406,7 @@ class CustomAlertMessageDialogNew extends StatelessWidget {
         Container(
           width: isMobile
               ? MediaQuery.of(context).size.width
-              : MediaQuery.of(context).size.width / 2.2,
+              : MediaQuery.of(context).size.width / 2.0,
           padding: EdgeInsets.only(
             top: Consts.avatarRadius + Consts.padding,
             bottom: Consts.padding,
@@ -440,7 +440,7 @@ class CustomAlertMessageDialogNew extends StatelessWidget {
               SizedBox(height: 24.0),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.of(context).pop(); // To close the dialog
+                  Navigator.of(context).pop(true); // To close the dialog
                 },
                 child: Text(buttonText),
               ),

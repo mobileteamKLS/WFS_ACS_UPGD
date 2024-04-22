@@ -254,6 +254,7 @@ class _YardCheckInNewState extends State<YardCheckInNew> {
                               backgroundColor: Color(0xFF1D24CA),
                               selectedColor: Color(0xfff85927),
                               showCheckmark: false,
+                             materialTapTargetSize: MaterialTapTargetSize.padded,
                               selected: selectedBaseStationID == baseStationList[index].cityid,
                               onSelected: (bool selected) {
                                 setState(() async {

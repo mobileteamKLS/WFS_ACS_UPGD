@@ -44,14 +44,14 @@ class _DashboardsState extends State<Dashboards> {
   bool useMobileLayout = false;
   late Timer _timer;
   List<WarehouseBaseStationBranch> dummyList = [
-    WarehouseBaseStationBranch(
-        organizationId: 0,
-        organizationBranchId: 0,
-        orgName: "Select",
-        orgBranchName: "Select")
+    // WarehouseBaseStationBranch(
+    //     organizationId: 0,
+    //     organizationBranchId: 0,
+    //     orgName: "Select",
+    //     orgBranchName: "Select")
   ];
-  String selectedBaseStation = "Select";
-  String selectedBaseStationBranch = "Select";
+  // String selectedBaseStation = "Select";
+  String selectedBaseStationBranch = "Select Terminal";
 
   @override
   void initState() {
@@ -95,7 +95,7 @@ class _DashboardsState extends State<Dashboards> {
     baseStationBranchList = [];
     dummyList = [];
     selectedBaseStationBranchID = 0;
-    selectedBaseStationBranch = "Select";
+    selectedBaseStationBranch = "Select Terminal";
     var queryParams = {"CityId": cityId, "OrganizationId": loggedinUser.OrganizationId.toString(), "UserId": loggedinUser.CreatedByUserId.toString()};
     await Global()
         .postData(
@@ -119,7 +119,7 @@ class _DashboardsState extends State<Dashboards> {
           organizationId: 0,
           organizationBranchId: 0,
           orgBranchName: "Select");
-      baseStationBranchList.add(wt);
+      // baseStationBranchList.add(wt);
       baseStationBranchList.sort(
               (a, b) => a.organizationBranchId.compareTo(b.organizationBranchId));
 
@@ -165,11 +165,12 @@ class _DashboardsState extends State<Dashboards> {
                   SizedBox(
                     width: MediaQuery.of(context).size.width/1.2 ,
                     child: Wrap(
+                      spacing: 2.5,
                       children: List<Widget>.generate(
                         baseStationList.length,
                             (int index) {
                           return Padding(
-                            padding: const EdgeInsets.all(2.0),
+                            padding: const EdgeInsets.symmetric(vertical :3.0,horizontal: 2.0),
                             child: ChoiceChip(
                               label: Text(' ${baseStationList[index].airportcode}',),
                               labelStyle: TextStyle(
@@ -177,7 +178,8 @@ class _DashboardsState extends State<Dashboards> {
                                 fontWeight: FontWeight.normal,
                                 color: Colors.white,
                               ),
-                              padding:const EdgeInsets.symmetric(horizontal: 18.0,vertical: 4.0) ,
+                              padding:const EdgeInsets.symmetric(horizontal: 18.0,vertical: 0.0) ,
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               backgroundColor: Color(0xFF1D24CA),
                               selectedColor: Color(0xfff85927),
                               showCheckmark: false,
@@ -185,6 +187,7 @@ class _DashboardsState extends State<Dashboards> {
                               onSelected: (bool selected) {
                                 setState(() async {
                                   selectedBaseStationID = (selected ? baseStationList[index].cityid : null)!;
+                                  selectedBaseStation=baseStationList[index].airportcode;
                                   print(selectedBaseStationID);
                                   await changeValue();
                                   setState(() {});
@@ -231,7 +234,7 @@ class _DashboardsState extends State<Dashboards> {
                                 fontWeight: FontWeight.normal,
                                 color: Colors.white,
                               ),
-                              padding:const EdgeInsets.symmetric(horizontal: 18.0,vertical: 4.0) ,
+                              // padding:const EdgeInsets.symmetric(horizontal: 18.0,vertical: 4.0) ,
                               selected: selectedBaseStationBranchID == dummyList[index].organizationBranchId,
                               showCheckmark: false,
                               selectedColor: Color(0xfff85927),
@@ -420,568 +423,616 @@ class _DashboardsState extends State<Dashboards> {
                                 Padding(
                                   padding: const EdgeInsets.only(
                                       top: 8.0, bottom: 18.0, left: 8, right: 8),
-                                  child: Row(
-                                      mainAxisAlignment: kIsWeb
-                                          ? MainAxisAlignment.center
-                                          : useMobileLayout
-                                          ? MainAxisAlignment.center
-                                          : MainAxisAlignment.center,
-                                      crossAxisAlignment: useMobileLayout
-                                          ? CrossAxisAlignment.center
-                                          : CrossAxisAlignment.center,
-                                      children: [
-                                        if (!useMobileLayout)
-                                          ClipRRect(
-                                              borderRadius:
-                                              BorderRadius.circular(5),
-                                              child: Image.asset(
-                                                  "assets/images/kls.jpg",
-                                                  //YVR.png", //WFS_logo.png",
-                                                  fit: kIsWeb
-                                                      ? BoxFit.fill
-                                                      : useMobileLayout
-                                                      ? BoxFit.fitWidth
-                                                      : BoxFit.fitWidth)),
-                                        if (useMobileLayout)
-                                          Container(
-                                            // decoration: BoxDecoration(
-                                            //   border: Border.all(
-                                            //       width: 4.0, color: Colors.white),
-                                            // ),
-                                            height: kIsWeb
-                                                ? 140
-                                                : MediaQuery.of(context)
-                                                .size
-                                                .height /
-                                                6.5,
-                                            width: kIsWeb
-                                                ? 300
-                                                : MediaQuery.of(context)
-                                                .size
-                                                .width /
-                                                3,
-                                            child: ClipRRect(
-                                                borderRadius:
-                                                BorderRadius.circular(5),
-                                                child: Image.asset(
-                                                    "assets/images/kls.jpg",
-                                                    //YVR.png", //WFS_logo.png",
-                                                    fit: kIsWeb
-                                                        ? BoxFit.fill
-                                                        : useMobileLayout
-                                                        ? BoxFit.fitWidth
-                                                        : BoxFit.fitWidth)),
-                                          ),
-                                        SizedBox(
-                                            width: kIsWeb
-                                                ? 24
-                                                : useMobileLayout
-                                                ? 16
-                                                : 32),
-                                        Padding(
-                                          padding: kIsWeb
-                                              ? const EdgeInsets.only(top: 8.0)
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                          mainAxisAlignment: kIsWeb
+                                              ? MainAxisAlignment.center
                                               : useMobileLayout
-                                              ? const EdgeInsets.only(top: 8.0)
-                                              : const EdgeInsets.only(top: 2.0),
-                                          child: Column(
-                                            mainAxisAlignment: useMobileLayout
-                                                ? MainAxisAlignment.center
-                                                : MainAxisAlignment.start,
-                                            crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                            children: [
-                                              if (useMobileLayout)
-                                              // Text(
-                                              //   "Welcome",
-                                              //   style: TextStyle(
-                                              //       fontSize: useMobileLayout
-                                              //           ? MediaQuery.of(context)
-                                              //                   .size
-                                              //                   .width /
-                                              //               22
-                                              //           : 28,
-                                              //       fontWeight: FontWeight.bold,
-                                              //       color: Colors.white),
-                                              // ),
-                                                DefaultTextStyle(
-                                                  style: TextStyle(
-                                                      fontSize:
-                                                      MediaQuery.of(context)
-                                                          .size
-                                                          .width /
-                                                          24,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.white),
-                                                  child: AnimatedTextKit(
-                                                    animatedTexts: [
-                                                      TyperAnimatedText(
-                                                          'Bonjour !!'),
-                                                      TyperAnimatedText(
-                                                          'Welcome !!'),
-                                                      // TyperAnimatedText('Bienvenida !!'),
-                                                      // TyperAnimatedText('ਸੁਆਗਤ ਹੈ !!'),
-                                                      TyperAnimatedText(
-                                                          'नमस्ते !!'),
-                                                      TyperAnimatedText(
-                                                          'Bienvenida !!'),
-                                                      TyperAnimatedText(
-                                                          'Welcome !!'),
-                                                    ],
-                                                  ),
-                                                ),
-                                              useMobileLayout
-                                                  ? SizedBox(
-                                                width: MediaQuery.of(context)
+                                              ? MainAxisAlignment.center
+                                              : MainAxisAlignment.center,
+                                          crossAxisAlignment: useMobileLayout
+                                              ? CrossAxisAlignment.center
+                                              : CrossAxisAlignment.center,
+                                          children: [
+                                            if (!useMobileLayout)
+                                              ClipRRect(
+                                                  borderRadius:
+                                                  BorderRadius.circular(5),
+                                                  child: Image.asset(
+                                                      "assets/images/kls.jpg",
+                                                      //YVR.png", //WFS_logo.png",
+                                                      fit: kIsWeb
+                                                          ? BoxFit.fill
+                                                          : useMobileLayout
+                                                          ? BoxFit.fitWidth
+                                                          : BoxFit.fitWidth)),
+                                            if (useMobileLayout)
+                                              Container(
+                                                // decoration: BoxDecoration(
+                                                //   border: Border.all(
+                                                //       width: 4.0, color: Colors.white),
+                                                // ),
+                                                height: kIsWeb
+                                                    ? 140
+                                                    : MediaQuery.of(context)
+                                                    .size
+                                                    .height /
+                                                    6.5,
+                                                width: kIsWeb
+                                                    ? 300
+                                                    : MediaQuery.of(context)
                                                     .size
                                                     .width /
-                                                    2.7,
-                                                child: Text(
-                                                  loggedinUser.UserId,
-                                                  style: TextStyle(
-                                                      fontSize: useMobileLayout
-                                                          ? MediaQuery.of(
-                                                          context)
-                                                          .size
-                                                          .width /
-                                                          20
-                                                          : 28,
-                                                      fontWeight:
-                                                      FontWeight.bold,
-                                                      color: Colors.white),
-                                                ),
-                                              )
-                                                  : Text(
-                                                "Welcome " +
-                                                    loggedinUser.UserId,
-                                                style: TextStyle(
-                                                    fontSize: useMobileLayout
-                                                        ? MediaQuery.of(
-                                                        context)
-                                                        .size
-                                                        .width /
-                                                        20
-                                                        : 28,
-                                                    fontWeight:
-                                                    FontWeight.bold,
-                                                    color: Colors.white),
+                                                    3,
+                                                child: ClipRRect(
+                                                    borderRadius:
+                                                    BorderRadius.circular(5),
+                                                    child: Image.asset(
+                                                        "assets/images/kls.jpg",
+                                                        //YVR.png", //WFS_logo.png",
+                                                        fit: kIsWeb
+                                                            ? BoxFit.fill
+                                                            : useMobileLayout
+                                                            ? BoxFit.fitWidth
+                                                            : BoxFit.fitWidth)),
                                               ),
+                                            SizedBox(
+                                                width: kIsWeb
+                                                    ? 24
+                                                    : useMobileLayout
+                                                    ? 16
+                                                    : 32),
+                                            Padding(
+                                              padding: kIsWeb
+                                                  ? const EdgeInsets.only(top: 8.0)
+                                                  : useMobileLayout
+                                                  ? const EdgeInsets.only(top: 8.0)
+                                                  : const EdgeInsets.only(top: 2.0),
+                                              child: Column(
+                                                mainAxisAlignment: useMobileLayout
+                                                    ? MainAxisAlignment.center
+                                                    : MainAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                                children: [
+                                                  if (useMobileLayout)
+                                                  // Text(
+                                                  //   "Welcome",
+                                                  //   style: TextStyle(
+                                                  //       fontSize: useMobileLayout
+                                                  //           ? MediaQuery.of(context)
+                                                  //                   .size
+                                                  //                   .width /
+                                                  //               22
+                                                  //           : 28,
+                                                  //       fontWeight: FontWeight.bold,
+                                                  //       color: Colors.white),
+                                                  // ),
+                                                    DefaultTextStyle(
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          MediaQuery.of(context)
+                                                              .size
+                                                              .width /
+                                                              24,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Colors.white),
+                                                      child: AnimatedTextKit(
+                                                        animatedTexts: [
+                                                          TyperAnimatedText(
+                                                              'Bonjour !!'),
+                                                          TyperAnimatedText(
+                                                              'Welcome !!'),
+                                                          // TyperAnimatedText('Bienvenida !!'),
+                                                          // TyperAnimatedText('ਸੁਆਗਤ ਹੈ !!'),
+                                                          TyperAnimatedText(
+                                                              'नमस्ते !!'),
+                                                          TyperAnimatedText(
+                                                              'Bienvenida !!'),
+                                                          TyperAnimatedText(
+                                                              'Welcome !!'),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  useMobileLayout
+                                                  ? SizedBox(
+                                                      width: MediaQuery.of(context)
+                                                              .size
+                                                              .width /
+                                                          2.7,
+                                                      child: Text(
+                                                        loggedinUser.UserId,
+                                                        style: TextStyle(
+                                                            fontSize: useMobileLayout
+                                                                ? MediaQuery.of(
+                                                                            context)
+                                                                        .size
+                                                                        .width /
+                                                                    20
+                                                                : 28,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color: Colors.white),
+                                                      ),
+                                                    )
+                                                  : Text(
+                                                      "Welcome " +
+                                                          loggedinUser.UserId,
+                                                      style: TextStyle(
+                                                        fontSize: useMobileLayout
+                                                            ? MediaQuery.of(
+                                                            context)
+                                                            .size
+                                                            .width /
+                                                            20
+                                                            : 28,
+                                                        fontWeight:
+                                                        FontWeight.bold,
+                                                        color: Colors.white),
+                                                  ),
+
                                               if (!useMobileLayout)
                                                 Padding(
-                                                  padding: const EdgeInsets.only(
-                                                      top: 5.0),
-                                                  child: Text(
-                                                    printDate,
-                                                    //"28 June 2022 23:40 ",
-                                                    style: TextStyle(
-                                                      fontSize: useMobileLayout
-                                                          ? MediaQuery.of(context)
-                                                          .size
-                                                          .width /
-                                                          25
-                                                          : 26,
-                                                      fontWeight: FontWeight.normal,
-                                                      color: Colors.white,
+                                                      padding: const EdgeInsets.only(
+                                                          top: 5.0),
+                                                      child: Text(
+                                                        printDate,
+                                                        //"28 June 2022 23:40 ",
+                                                        style: TextStyle(
+                                                          fontSize: useMobileLayout
+                                                              ? MediaQuery.of(context)
+                                                              .size
+                                                              .width /
+                                                              25
+                                                              : 26,
+                                                          fontWeight: FontWeight.normal,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
                                                     ),
-                                                  ),
-                                                ),
-                                              useMobileLayout
-                                                  ? SizedBox(height: 6)
-                                                  : SizedBox(height: 10),
-                                              // if (isGHA)
-                                              //   SizedBox(
-                                              //     width: useMobileLayout
-                                              //         ? MediaQuery.of(context)
-                                              //                 .size
-                                              //                 .width /
-                                              //             2.6
-                                              //         : 230,
-                                              //     height: useMobileLayout
-                                              //         ? MediaQuery.of(context)
-                                              //                 .size
-                                              //                 .height /
-                                              //             18
-                                              //         : 50,
-                                              //     child:
-                                              //         DropdownButtonHideUnderline(
-                                              //       child: Container(
-                                              //         constraints: BoxConstraints(
-                                              //             minHeight: 50),
-                                              //         decoration: BoxDecoration(
-                                              //           border: Border.all(
-                                              //               color: Colors.grey,
-                                              //               width: 0.2),
-                                              //           borderRadius:
-                                              //               BorderRadius.all(
-                                              //                   Radius.circular(5)),
-                                              //           color: Colors.white,
-                                              //         ),
-                                              //         padding: EdgeInsets.symmetric(
-                                              //             horizontal: 10),
-                                              //         child: DropdownButton(
-                                              //           value: selectedTerminalID,
-                                              //           items: terminalsList
-                                              //               .map((terminal) {
-                                              //             return DropdownMenuItem(
-                                              //               child: Text(
-                                              //                   terminal
-                                              //                       .custodianName
-                                              //                       .toUpperCase(),
-                                              //                   style: useMobileLayout
-                                              //                       ? mobileTextFontStyle
-                                              //                       : iPadYellowTextFontStyleBold),
-                                              //               //label of item
-                                              //               value: terminal
-                                              //                   .custudian, //value of item
-                                              //             );
-                                              //           }).toList(),
-                                              //           onChanged: (value) {
-                                              //             setState(() {
-                                              //               selectedTerminal =
-                                              //                   value.toString();
-                                              //               selectedTerminalID =
-                                              //                   int.parse(value
-                                              //                       .toString());
-                                              //             });
-                                              //           },
-                                              //           // items: [
-                                              //           //   "Select",
-                                              //           //   "Two",
-                                              //           //   "Three"
-                                              //           // ]
-                                              //           //     .map((String
-                                              //           // value) =>
-                                              //           //     DropdownMenuItem(
-                                              //           //       value:
-                                              //           //       value,
-                                              //           //       child:
-                                              //           //       Column(
-                                              //           //         mainAxisAlignment:
-                                              //           //         MainAxisAlignment.center,
-                                              //           //         crossAxisAlignment:
-                                              //           //         CrossAxisAlignment.start,
-                                              //           //         children: [
-                                              //           //           Text(
-                                              //           //             value,
-                                              //           //             style: TextStyle(
-                                              //           //               fontSize: 14,
-                                              //           //               fontWeight: FontWeight.normal,
-                                              //           //               color: Colors.black,
-                                              //           //             ),
-                                              //           //           ),
-                                              //           //         ],
-                                              //           //       ),
-                                              //           //     ))
-                                              //           //     .toList(),
-                                              //         ),
-                                              //       ),
-                                              //     ),
-                                              //   ),
-                                            ],
-                                          ),
-                                        ),
-
-                                        if (kIsWeb)
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                                left: 40.0, top: 16.0),
-                                            child: Column(
-                                              children: [
-                                                GestureDetector(
-                                                  onTap: () async {
-                                                    //perform logout
-                                                    //clear share prefs
-                                                    //go to login screen
-                                                    var userSelection =
-                                                    await showDialog(
-                                                      context: context,
-                                                      builder: (BuildContext
-                                                      context) =>
-                                                          CustomConfirmDialog(
-                                                              title:
-                                                              "Logout Confirm ?",
-                                                              description:
-                                                              "Are you sure you want to logout ?",
-                                                              buttonText: "Yes",
-                                                              imagepath:
-                                                              'assets/images/question.gif',
-                                                              isMobile:
-                                                              useMobileLayout),
-                                                    );
-                                                    print("userSelection ==" +
-                                                        userSelection.toString());
-                                                    if (userSelection !=
-                                                        null) if (userSelection == true) {
-                                                      SharedPreferences prefs =
-                                                      await SharedPreferences
-                                                          .getInstance();
-                                                      prefs.clear();
-
-                                                      loggedinUser = new UserDetails(
-                                                          UserId: "",
-                                                          OrgName: "",
-                                                          Name: "",
-                                                          EmailId: "",
-                                                          MobileNo: "",
-                                                          OrganizationBranchId: 0,
-                                                          OrganizationId: 0,
-                                                          CreatedByUserId: 0,
-                                                          OrganizationTypeId: 0,
-                                                          IsWFSIntegration: "",
-                                                          OrganizationBranchIdString:
-                                                          "",
-                                                          OrganizationtypeIdString:
-                                                          "");
-                                                      selectedTerminal = "";
-                                                      Navigator.pushReplacement(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                HomeScreen()),
-                                                      );
-                                                    }
-                                                  },
-                                                  child: Icon(
-                                                    Icons.home,
-                                                    size: 48,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding: const EdgeInsets.only(
-                                                      top: 24.0),
-                                                  child: GestureDetector(
-                                                    onTap: () async {
-                                                      var userSelection =
-                                                      await showDialog(
-                                                        context: context,
-                                                        builder: (BuildContext
-                                                        context) =>
-                                                            CustomConfirmDialog(
-                                                                title:
-                                                                "Logout Confirm ?",
-                                                                description:
-                                                                "Are you sure you want to logout ?",
-                                                                buttonText: "Yes",
-                                                                imagepath:
-                                                                'assets/images/question.gif',
-                                                                isMobile:
-                                                                useMobileLayout),
-                                                      );
-                                                      print("userSelection ==" +
-                                                          userSelection.toString());
-                                                      if (userSelection !=
-                                                          null) if (userSelection == true) {
-                                                        SharedPreferences prefs =
-                                                        await SharedPreferences
-                                                            .getInstance();
-                                                        prefs.clear();
-                                                        loggedinUser = new UserDetails(
-                                                            UserId: "",
-                                                            OrgName: "",
-                                                            Name: "",
-                                                            EmailId: "",
-                                                            MobileNo: "",
-                                                            OrganizationBranchId: 0,
-                                                            OrganizationId: 0,
-                                                            CreatedByUserId: 0,
-                                                            OrganizationTypeId: 0,
-                                                            IsWFSIntegration: "",
-                                                            OrganizationBranchIdString:
-                                                            "",
-                                                            OrganizationtypeIdString:
-                                                            "");
-                                                        selectedTerminal = "";
-                                                        Navigator.pushReplacement(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                              builder: (context) =>
-                                                                  LoginPage()),
-                                                        );
-                                                      }
-                                                    },
-                                                    child: Icon(
-                                                      Icons.logout,
-                                                      size: 48,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
+                                                  useMobileLayout
+                                                      ? SizedBox(height: 6)
+                                                      : SizedBox(height: 10),
+                                                  // if (isGHA)
+                                                  //   SizedBox(
+                                                  //     width: useMobileLayout
+                                                  //         ? MediaQuery.of(context)
+                                                  //                 .size
+                                                  //                 .width /
+                                                  //             2.6
+                                                  //         : 230,
+                                                  //     height: useMobileLayout
+                                                  //         ? MediaQuery.of(context)
+                                                  //                 .size
+                                                  //                 .height /
+                                                  //             18
+                                                  //         : 50,
+                                                  //     child:
+                                                  //         DropdownButtonHideUnderline(
+                                                  //       child: Container(
+                                                  //         constraints: BoxConstraints(
+                                                  //             minHeight: 50),
+                                                  //         decoration: BoxDecoration(
+                                                  //           border: Border.all(
+                                                  //               color: Colors.grey,
+                                                  //               width: 0.2),
+                                                  //           borderRadius:
+                                                  //               BorderRadius.all(
+                                                  //                   Radius.circular(5)),
+                                                  //           color: Colors.white,
+                                                  //         ),
+                                                  //         padding: EdgeInsets.symmetric(
+                                                  //             horizontal: 10),
+                                                  //         child: DropdownButton(
+                                                  //           value: selectedTerminalID,
+                                                  //           items: terminalsList
+                                                  //               .map((terminal) {
+                                                  //             return DropdownMenuItem(
+                                                  //               child: Text(
+                                                  //                   terminal
+                                                  //                       .custodianName
+                                                  //                       .toUpperCase(),
+                                                  //                   style: useMobileLayout
+                                                  //                       ? mobileTextFontStyle
+                                                  //                       : iPadYellowTextFontStyleBold),
+                                                  //               //label of item
+                                                  //               value: terminal
+                                                  //                   .custudian, //value of item
+                                                  //             );
+                                                  //           }).toList(),
+                                                  //           onChanged: (value) {
+                                                  //             setState(() {
+                                                  //               selectedTerminal =
+                                                  //                   value.toString();
+                                                  //               selectedTerminalID =
+                                                  //                   int.parse(value
+                                                  //                       .toString());
+                                                  //             });
+                                                  //           },
+                                                  //           // items: [
+                                                  //           //   "Select",
+                                                  //           //   "Two",
+                                                  //           //   "Three"
+                                                  //           // ]
+                                                  //           //     .map((String
+                                                  //           // value) =>
+                                                  //           //     DropdownMenuItem(
+                                                  //           //       value:
+                                                  //           //       value,
+                                                  //           //       child:
+                                                  //           //       Column(
+                                                  //           //         mainAxisAlignment:
+                                                  //           //         MainAxisAlignment.center,
+                                                  //           //         crossAxisAlignment:
+                                                  //           //         CrossAxisAlignment.start,
+                                                  //           //         children: [
+                                                  //           //           Text(
+                                                  //           //             value,
+                                                  //           //             style: TextStyle(
+                                                  //           //               fontSize: 14,
+                                                  //           //               fontWeight: FontWeight.normal,
+                                                  //           //               color: Colors.black,
+                                                  //           //             ),
+                                                  //           //           ),
+                                                  //           //         ],
+                                                  //           //       ),
+                                                  //           //     ))
+                                                  //           //     .toList(),
+                                                  //         ),
+                                                  //       ),
+                                                  //     ),
+                                                  //   ),
+                                                ],
+                                              ),
                                             ),
-                                          ),
 
-                                        if (!useMobileLayout && !kIsWeb)
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                                left: 40.0, top: 16.0),
-                                            child: Column(
-                                              children: [
-                                                Padding(
-                                                  padding: const EdgeInsets.only(
-                                                      top: 0.0),
-                                                  child: GestureDetector(
-                                                    onTap: () async {
-                                                      var userSelection =
-                                                      await showDialog(
-                                                        context: context,
-                                                        builder: (BuildContext
-                                                        context) =>
-                                                            CustomConfirmDialog(
-                                                                title:
-                                                                "Logout Confirm ?",
-                                                                description:
-                                                                "Are you sure you want to logout ?",
-                                                                buttonText: "Yes",
-                                                                imagepath:
-                                                                'assets/images/question.gif',
-                                                                isMobile:
-                                                                useMobileLayout),
-                                                      );
-                                                      print("userSelection ==" +
-                                                          userSelection.toString());
-                                                      if (userSelection !=
-                                                          null) if (userSelection == true) {
-                                                        SharedPreferences prefs =
-                                                        await SharedPreferences
-                                                            .getInstance();
-                                                        prefs.clear();
-                                                        loggedinUser = new UserDetails(
-                                                            UserId: "",
-                                                            OrgName: "",
-                                                            Name: "",
-                                                            EmailId: "",
-                                                            MobileNo: "",
-                                                            OrganizationBranchId: 0,
-                                                            OrganizationId: 0,
-                                                            CreatedByUserId: 0,
-                                                            OrganizationTypeId: 0,
-                                                            IsWFSIntegration: "",
-                                                            OrganizationBranchIdString:
-                                                            "",
-                                                            OrganizationtypeIdString:
-                                                            "");
-                                                        selectedTerminal = "";
-                                                        Navigator.pushReplacement(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                              builder: (context) =>
-                                                                  LoginPage()),
+                                            if (kIsWeb)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    left: 40.0, top: 16.0),
+                                                child: Column(
+                                                  children: [
+                                                    GestureDetector(
+                                                      onTap: () async {
+                                                        //perform logout
+                                                        //clear share prefs
+                                                        //go to login screen
+                                                        var userSelection =
+                                                        await showDialog(
+                                                          context: context,
+                                                          builder: (BuildContext
+                                                          context) =>
+                                                              CustomConfirmDialog(
+                                                                  title:
+                                                                  "Logout Confirm ?",
+                                                                  description:
+                                                                  "Are you sure you want to logout ?",
+                                                                  buttonText: "Yes",
+                                                                  imagepath:
+                                                                  'assets/images/question.gif',
+                                                                  isMobile:
+                                                                  useMobileLayout),
                                                         );
-                                                      }
-                                                    },
-                                                    child: Icon(
-                                                      Icons.logout,
-                                                      size: MediaQuery.of(context)
-                                                          .size
-                                                          .width /
-                                                          18, //48,
+                                                        print("userSelection ==" +
+                                                            userSelection.toString());
+                                                        if (userSelection !=
+                                                            null) if (userSelection == true) {
+                                                          SharedPreferences prefs =
+                                                          await SharedPreferences
+                                                              .getInstance();
+                                                          prefs.clear();
 
-                                                      color: Colors.white,
+                                                          loggedinUser = new UserDetails(
+                                                              UserId: "",
+                                                              OrgName: "",
+                                                              Name: "",
+                                                              EmailId: "",
+                                                              MobileNo: "",
+                                                              OrganizationBranchId: 0,
+                                                              OrganizationId: 0,
+                                                              CreatedByUserId: 0,
+                                                              OrganizationTypeId: 0,
+                                                              IsWFSIntegration: "",
+                                                              OrganizationBranchIdString:
+                                                              "",
+                                                              OrganizationtypeIdString:
+                                                              "");
+                                                          selectedTerminal = "";
+                                                          Navigator.pushReplacement(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                                builder: (context) =>
+                                                                    HomeScreen()),
+                                                          );
+                                                        }
+                                                      },
+                                                      child: Icon(
+                                                        Icons.home,
+                                                        size: 48,
+                                                        color: Colors.white,
+                                                      ),
                                                     ),
-                                                  ),
+                                                    Padding(
+                                                      padding: const EdgeInsets.only(
+                                                          top: 24.0),
+                                                      child: GestureDetector(
+                                                        onTap: () async {
+                                                          var userSelection =
+                                                          await showDialog(
+                                                            context: context,
+                                                            builder: (BuildContext
+                                                            context) =>
+                                                                CustomConfirmDialog(
+                                                                    title:
+                                                                    "Logout Confirm ?",
+                                                                    description:
+                                                                    "Are you sure you want to logout ?",
+                                                                    buttonText: "Yes",
+                                                                    imagepath:
+                                                                    'assets/images/question.gif',
+                                                                    isMobile:
+                                                                    useMobileLayout),
+                                                          );
+                                                          print("userSelection ==" +
+                                                              userSelection.toString());
+                                                          if (userSelection !=
+                                                              null) if (userSelection == true) {
+                                                            SharedPreferences prefs =
+                                                            await SharedPreferences
+                                                                .getInstance();
+                                                            prefs.clear();
+                                                            loggedinUser = new UserDetails(
+                                                                UserId: "",
+                                                                OrgName: "",
+                                                                Name: "",
+                                                                EmailId: "",
+                                                                MobileNo: "",
+                                                                OrganizationBranchId: 0,
+                                                                OrganizationId: 0,
+                                                                CreatedByUserId: 0,
+                                                                OrganizationTypeId: 0,
+                                                                IsWFSIntegration: "",
+                                                                OrganizationBranchIdString:
+                                                                "",
+                                                                OrganizationtypeIdString:
+                                                                "");
+                                                            selectedTerminal = "";
+                                                            Navigator.pushReplacement(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                  builder: (context) =>
+                                                                      LoginPage()),
+                                                            );
+                                                          }
+                                                        },
+                                                        child: Icon(
+                                                          Icons.logout,
+                                                          size: 48,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
-                                          ),
+                                              ),
 
-                                        if (useMobileLayout)
-                                          Padding(
-                                            padding:
-                                            const EdgeInsets.only(top: 8.0),
-                                            child: Column(
-                                              children: [
-                                                GestureDetector(
-                                                  onTap: () async {
-                                                    var userSelection =
-                                                    await showDialog(
-                                                      context: context,
-                                                      builder: (BuildContext context) =>
-                                                          CustomConfirmDialog(
-                                                              title: "Logout Confirm ?",
-                                                              description:
-                                                              "Are you sure you want to logout ?",
-                                                              buttonText: "Yes",
-                                                              imagepath:
-                                                              'assets/images/question.gif',
-                                                              isMobile:
-                                                              useMobileLayout),
-                                                    );
-                                                    print("userSelection ==" +
-                                                        userSelection.toString());
-                                                    if (userSelection !=
-                                                        null) if (userSelection == true) {
-                                                      SharedPreferences prefs =
-                                                      await SharedPreferences
-                                                          .getInstance();
-                                                      prefs.clear();
-                                                      //perform logout
-                                                      //clear share prefs
-                                                      //go to login screen
+                                            if (!useMobileLayout && !kIsWeb)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    left: 40.0, top: 16.0),
+                                                child: Column(
+                                                  children: [
+                                                    Padding(
+                                                      padding: const EdgeInsets.only(
+                                                          top: 0.0),
+                                                      child: GestureDetector(
+                                                        onTap: () async {
+                                                          var userSelection =
+                                                          await showDialog(
+                                                            context: context,
+                                                            builder: (BuildContext
+                                                            context) =>
+                                                                CustomConfirmDialog(
+                                                                    title:
+                                                                    "Logout Confirm ?",
+                                                                    description:
+                                                                    "Are you sure you want to logout ?",
+                                                                    buttonText: "Yes",
+                                                                    imagepath:
+                                                                    'assets/images/question.gif',
+                                                                    isMobile:
+                                                                    useMobileLayout),
+                                                          );
+                                                          print("userSelection ==" +
+                                                              userSelection.toString());
+                                                          if (userSelection !=
+                                                              null) if (userSelection == true) {
+                                                            SharedPreferences prefs =
+                                                            await SharedPreferences
+                                                                .getInstance();
+                                                            prefs.clear();
+                                                            loggedinUser = new UserDetails(
+                                                                UserId: "",
+                                                                OrgName: "",
+                                                                Name: "",
+                                                                EmailId: "",
+                                                                MobileNo: "",
+                                                                OrganizationBranchId: 0,
+                                                                OrganizationId: 0,
+                                                                CreatedByUserId: 0,
+                                                                OrganizationTypeId: 0,
+                                                                IsWFSIntegration: "",
+                                                                OrganizationBranchIdString:
+                                                                "",
+                                                                OrganizationtypeIdString:
+                                                                "");
+                                                            selectedTerminal = "";
+                                                            Navigator.pushReplacement(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                  builder: (context) =>
+                                                                      LoginPage()),
+                                                            );
+                                                          }
+                                                        },
+                                                        child: Icon(
+                                                          Icons.logout,
+                                                          size: MediaQuery.of(context)
+                                                              .size
+                                                              .width /
+                                                              18, //48,
 
-                                                      loggedinUser = new UserDetails(
-                                                          UserId: "",
-                                                          OrgName: "",
-                                                          Name: "",
-                                                          EmailId: "",
-                                                          MobileNo: "",
-                                                          OrganizationBranchId: 0,
-                                                          OrganizationId: 0,
-                                                          CreatedByUserId: 0,
-                                                          OrganizationTypeId: 0,
-                                                          IsWFSIntegration: "",
-                                                          OrganizationBranchIdString:
-                                                          "",
-                                                          OrganizationtypeIdString: "");
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
 
-                                                      Navigator.pushReplacement(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                LoginPage()),
-                                                      );
-                                                    }
-                                                  },
-                                                  child: Icon(
-                                                    Icons.logout,
-                                                    size: MediaQuery.of(context)
+                                            if (useMobileLayout)
+                                              Padding(
+                                                padding:
+                                                const EdgeInsets.only(top: 8.0),
+                                                child: Column(
+                                                  children: [
+                                                    GestureDetector(
+                                                      onTap: () async {
+                                                        var userSelection =
+                                                        await showDialog(
+                                                          context: context,
+                                                          builder: (BuildContext context) =>
+                                                              CustomConfirmDialog(
+                                                                  title: "Logout Confirm ?",
+                                                                  description:
+                                                                  "Are you sure you want to logout ?",
+                                                                  buttonText: "Yes",
+                                                                  imagepath:
+                                                                  'assets/images/question.gif',
+                                                                  isMobile:
+                                                                  useMobileLayout),
+                                                        );
+                                                        print("userSelection ==" +
+                                                            userSelection.toString());
+                                                        if (userSelection !=
+                                                            null) if (userSelection == true) {
+                                                          SharedPreferences prefs =
+                                                          await SharedPreferences
+                                                              .getInstance();
+                                                          prefs.clear();
+                                                          //perform logout
+                                                          //clear share prefs
+                                                          //go to login screen
+
+                                                          loggedinUser = new UserDetails(
+                                                              UserId: "",
+                                                              OrgName: "",
+                                                              Name: "",
+                                                              EmailId: "",
+                                                              MobileNo: "",
+                                                              OrganizationBranchId: 0,
+                                                              OrganizationId: 0,
+                                                              CreatedByUserId: 0,
+                                                              OrganizationTypeId: 0,
+                                                              IsWFSIntegration: "",
+                                                              OrganizationBranchIdString:
+                                                              "",
+                                                              OrganizationtypeIdString: "");
+
+                                                          Navigator.pushReplacement(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                                builder: (context) =>
+                                                                    LoginPage()),
+                                                          );
+                                                        }
+                                                      },
+                                                      child: Icon(
+                                                        Icons.logout,
+                                                        size: MediaQuery.of(context)
+                                                            .size
+                                                            .width /
+                                                            13, //48,
+
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                    // GestureDetector(
+                                                    //   onTap: () {
+                                                    //     showDialog(
+                                                    //         barrierDismissible: false,
+                                                    //         context: context,
+                                                    //         builder: (context) {
+                                                    //           return selectTerminalBox();
+                                                    //         });
+                                                    //   },
+                                                    //   child: Icon(
+                                                    //     Icons.add,
+                                                    //     size: MediaQuery.of(context)
+                                                    //         .size
+                                                    //         .width /
+                                                    //         13, //48,
+                                                    //
+                                                    //     color: Colors.white,
+                                                    //   ),
+                                                    // ),
+                                                  ],
+                                                ),
+                                              ),
+
+                                            // Text("Wave clipper", style: TextStyle(
+                                            //   fontSize:18, color:Colors.white,
+                                            // ),
+
+                                            // )
+                                          ]),
+                                      useMobileLayout
+                                          ? Row(
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            children: [
+                                            Padding(
+                                              padding: const EdgeInsets.only(left:8.0),
+                                              child: SizedBox(
+                                                width: MediaQuery.of(context)
                                                         .size
                                                         .width /
-                                                        13, //48,
+                                                    1.5,
 
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    showDialog(
-                                                        barrierDismissible: false,
-                                                        context: context,
-                                                        builder: (context) {
-                                                          return selectTerminalBox();
-                                                        });
-                                                  },
-                                                  child: Icon(
-                                                    Icons.add,
-                                                    size: MediaQuery.of(context)
-                                                        .size
-                                                        .width /
-                                                        13, //48,
-
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              ],
+                                                child: GestureDetector(
+                                                    onTap: () {
+                                                      showDialog(
+                                                          barrierDismissible:
+                                                              false,
+                                                          context: context,
+                                                          builder: (context) {
+                                                            return selectTerminalBox();
+                                                          });
+                                                    },
+                                                    child: Text(
+                                                      selectedBaseStationBranch,
+                                                      style: TextStyle(
+                                                          fontSize: useMobileLayout
+                                                              ? MediaQuery.of(
+                                                                          context)
+                                                                      .size
+                                                                      .width /
+                                                                  20
+                                                              : 28,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.white),
+                                                    )),
+                                              ),
                                             ),
-                                          ),
-
-                                        // Text("Wave clipper", style: TextStyle(
-                                        //   fontSize:18, color:Colors.white,
-                                        // ),
-
-                                        // )
-                                      ]),
+                                          ],
+                                          )
+                                          : SizedBox(),
+                                    ],
+                                  ),
                                 ),
+
                               ]),
                         ),
                       ),
@@ -989,168 +1040,168 @@ class _DashboardsState extends State<Dashboards> {
                   ),
                 ]),
                 SizedBox(height: useMobileLayout ? 0 : 24),
-                if (isTrucker || isGHA)
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          SizedBox(
-                            width: MediaQuery.of(context).size.width / 2.1,
-                            child: Center(
-                              child: Text(
-                                "Select Base Station",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.normal,
-                                  color: Color(0xFF11249F),
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 2,
-                          ),
-                          SizedBox(
-                            width: MediaQuery.of(context).size.width / 2.1,
-                            child: Center(
-                              child: Text(
-                                "Select Terminal Name",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.normal,
-                                  color: Color(0xFF11249F),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Row(
-                        children: [
-                          SizedBox(
-                            width: 6,
-                          ),
-                          SizedBox(
-                            width: MediaQuery.of(context).size.width / 2.1,
-                            child: Center(
-                              child: DropdownButtonHideUnderline(
-                                child: Container(
-                                  constraints: BoxConstraints(minHeight: 50),
-                                  decoration: BoxDecoration(
-                                    border:
-                                    Border.all(color: Colors.grey, width: 0.2),
-                                    borderRadius:
-                                    BorderRadius.all(Radius.circular(5)),
-                                    color: Colors.white,
-                                  ),
-                                  padding: EdgeInsets.symmetric(horizontal: 10),
-                                  child: DropdownButton(
-                                    value: selectedBaseStationID,
-                                    isExpanded: true,
-                                    onChanged: (value) async {
-                                      setState(() {
-                                        // selectedBaseStation = value.toString();
-                                        selectedBaseStationID =
-                                            int.parse(value.toString());
-                                        // getBaseStationBranch(selectedBaseStationID);
-                                        print(";;;;$selectedBaseStationID;;;");
-                                      });
-                                      await changeValue();
-                                      setState(() {});
-                                    },
-                                    items: baseStationList2
-                                        .map((terminal) => DropdownMenuItem(
-                                      value: terminal.cityid,
-                                      child: Column(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            terminal.airportcode
-                                                .toUpperCase(),
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.normal,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ))
-                                        .toList(),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 8,
-                          ),
-                          SizedBox(
-                            width: MediaQuery.of(context).size.width / 2.1,
-                            child: Center(
-                              child: DropdownButtonHideUnderline(
-                                child: Container(
-                                  constraints: BoxConstraints(minHeight: 50),
-                                  decoration: BoxDecoration(
-                                    border:
-                                    Border.all(color: Colors.grey, width: 0.2),
-                                    borderRadius:
-                                    BorderRadius.all(Radius.circular(5)),
-                                    color: Colors.white,
-                                  ),
-                                  padding: EdgeInsets.symmetric(horizontal: 10),
-                                  child: DropdownButton(
-                                    value: selectedBaseStationBranchID,
-                                    isDense: false,
-                                    isExpanded: true,
-                                    onChanged: (_value) {
-                                      setState(() {
-                                        // selectedBaseStationBranch = _value.toString();
-                                        selectedBaseStationBranchID =
-                                            int.parse(_value.toString());
-                                        print(selectedBaseStationBranchID);
-                                        // walkInEnable();
-                                      });
-                                      // print(selectedBaseStationBranch);
-                                    },
-                                    items: dummyList
-                                        .map((value) => DropdownMenuItem(
-                                      value: value.organizationBranchId,
-                                      child: Wrap(
-                                        // mainAxisAlignment:
-                                        //     MainAxisAlignment.center,
-                                        // crossAxisAlignment:
-                                        //     CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            value.orgBranchName
-                                                .toUpperCase(),
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.normal,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ))
-                                        .toList(),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    ],
-                  ),
+                // if (isTrucker || isGHA)
+                //   Column(
+                //     mainAxisSize: MainAxisSize.min,
+                //     children: [
+                //       Row(
+                //         children: [
+                //           SizedBox(
+                //             width: MediaQuery.of(context).size.width / 2.1,
+                //             child: Center(
+                //               child: Text(
+                //                 "Select Base Station",
+                //                 style: TextStyle(
+                //                   fontSize: 16,
+                //                   fontWeight: FontWeight.normal,
+                //                   color: Color(0xFF11249F),
+                //                 ),
+                //               ),
+                //             ),
+                //           ),
+                //           SizedBox(
+                //             height: 2,
+                //           ),
+                //           SizedBox(
+                //             width: MediaQuery.of(context).size.width / 2.1,
+                //             child: Center(
+                //               child: Text(
+                //                 "Select Terminal Name",
+                //                 style: TextStyle(
+                //                   fontSize: 16,
+                //                   fontWeight: FontWeight.normal,
+                //                   color: Color(0xFF11249F),
+                //                 ),
+                //               ),
+                //             ),
+                //           ),
+                //         ],
+                //       ),
+                //       SizedBox(
+                //         height: 10,
+                //       ),
+                //       Row(
+                //         children: [
+                //           SizedBox(
+                //             width: 6,
+                //           ),
+                //           SizedBox(
+                //             width: MediaQuery.of(context).size.width / 2.1,
+                //             child: Center(
+                //               child: DropdownButtonHideUnderline(
+                //                 child: Container(
+                //                   constraints: BoxConstraints(minHeight: 50),
+                //                   decoration: BoxDecoration(
+                //                     border:
+                //                     Border.all(color: Colors.grey, width: 0.2),
+                //                     borderRadius:
+                //                     BorderRadius.all(Radius.circular(5)),
+                //                     color: Colors.white,
+                //                   ),
+                //                   padding: EdgeInsets.symmetric(horizontal: 10),
+                //                   child: DropdownButton(
+                //                     value: selectedBaseStationID,
+                //                     isExpanded: true,
+                //                     onChanged: (value) async {
+                //                       setState(() {
+                //                         // selectedBaseStation = value.toString();
+                //                         selectedBaseStationID =
+                //                             int.parse(value.toString());
+                //                         // getBaseStationBranch(selectedBaseStationID);
+                //                         print(";;;;$selectedBaseStationID;;;");
+                //                       });
+                //                       await changeValue();
+                //                       setState(() {});
+                //                     },
+                //                     items: baseStationList2
+                //                         .map((terminal) => DropdownMenuItem(
+                //                       value: terminal.cityid,
+                //                       child: Column(
+                //                         mainAxisAlignment:
+                //                         MainAxisAlignment.center,
+                //                         crossAxisAlignment:
+                //                         CrossAxisAlignment.start,
+                //                         children: [
+                //                           Text(
+                //                             terminal.airportcode
+                //                                 .toUpperCase(),
+                //                             style: TextStyle(
+                //                               fontSize: 14,
+                //                               fontWeight: FontWeight.normal,
+                //                               color: Colors.black,
+                //                             ),
+                //                           ),
+                //                         ],
+                //                       ),
+                //                     ))
+                //                         .toList(),
+                //                   ),
+                //                 ),
+                //               ),
+                //             ),
+                //           ),
+                //           SizedBox(
+                //             width: 8,
+                //           ),
+                //           SizedBox(
+                //             width: MediaQuery.of(context).size.width / 2.1,
+                //             child: Center(
+                //               child: DropdownButtonHideUnderline(
+                //                 child: Container(
+                //                   constraints: BoxConstraints(minHeight: 50),
+                //                   decoration: BoxDecoration(
+                //                     border:
+                //                     Border.all(color: Colors.grey, width: 0.2),
+                //                     borderRadius:
+                //                     BorderRadius.all(Radius.circular(5)),
+                //                     color: Colors.white,
+                //                   ),
+                //                   padding: EdgeInsets.symmetric(horizontal: 10),
+                //                   child: DropdownButton(
+                //                     value: selectedBaseStationBranchID,
+                //                     isDense: false,
+                //                     isExpanded: true,
+                //                     onChanged: (_value) {
+                //                       setState(() {
+                //                         // selectedBaseStationBranch = _value.toString();
+                //                         selectedBaseStationBranchID =
+                //                             int.parse(_value.toString());
+                //                         print(selectedBaseStationBranchID);
+                //                         // walkInEnable();
+                //                       });
+                //                       // print(selectedBaseStationBranch);
+                //                     },
+                //                     items: dummyList
+                //                         .map((value) => DropdownMenuItem(
+                //                       value: value.organizationBranchId,
+                //                       child: Wrap(
+                //                         // mainAxisAlignment:
+                //                         //     MainAxisAlignment.center,
+                //                         // crossAxisAlignment:
+                //                         //     CrossAxisAlignment.start,
+                //                         children: [
+                //                           Text(
+                //                             value.orgBranchName
+                //                                 .toUpperCase(),
+                //                             style: TextStyle(
+                //                               fontSize: 14,
+                //                               fontWeight: FontWeight.normal,
+                //                               color: Colors.black,
+                //                             ),
+                //                           ),
+                //                         ],
+                //                       ),
+                //                     ))
+                //                         .toList(),
+                //                   ),
+                //                 ),
+                //               ),
+                //             ),
+                //           ),
+                //         ],
+                //       )
+                //     ],
+                //   ),
                 Wrap(
                   alignment: WrapAlignment.start,
                   crossAxisAlignment: WrapCrossAlignment.start,
