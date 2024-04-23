@@ -27,12 +27,13 @@ class WalkInAwbDetailsNew extends StatefulWidget {
   State<WalkInAwbDetailsNew> createState() => _WalkInAwbDetailsNewState();
 }
 
-
-
 class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
   int modeSelected = 0;
   String selectedMawbNo = "", selectedOrigin = "", selectedPrefix = "";
-  bool useMobileLayout = false, isLoading = false, isSavingData = false,isVerified=false;
+  bool useMobileLayout = false,
+      isLoading = false,
+      isSavingData = false,
+      isVerified = false;
   TextEditingController txtOriginM = new TextEditingController();
   TextEditingController txtPrefixM = new TextEditingController();
   TextEditingController txtMawbnoM = new TextEditingController();
@@ -52,34 +53,37 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
 
   List<AWB> hawbListToBind = [];
   List<AWB> mawbList = [];
+
   // List<AWB> mawbListPickUP = [];
   List<AWB> hawbList = [];
-  List<AWB>verifiedMawbList=[];
-  List<AWB>verifiedHawbList=[];
+  List<AWB> verifiedMawbList = [];
+  List<AWB> verifiedHawbList = [];
 
   List<MAWB> mawbListSave = [];
   List<MAWBDropoff> mawbDropOffListSave = [];
   List<HAWB> hawbListSave = [];
+  List<String> requestIdList=[];
 
   String shipmentTypeSelected = "Select";
   String commoditySelected = "Select";
+  int commoditySelectedID = 0;
   String errMsgText = "";
   String modeName = "Drop-off";
   Map<String, String> rspErrorCodes = {
     "WH":
-    "The HAWB No does not exists. Kindly amend the necessary changes and save again.",
+        "The HAWB No does not exists. Kindly amend the necessary changes and save again.",
     "NA":
-    "This AWB or part of this AWB is already delivered. Please try again later.",
+        "This AWB or part of this AWB is already delivered. Please try again later.",
     "NP": "All available PCs have been delivered.",
     "NF": "No record found for this AWB.",
     "LH":
-    "The partial delivery of MAWB No. is already completed outside ACS. In order to proceed this AWB enter HAWB’s details.",
+        "The partial delivery of MAWB No. is already completed outside ACS. In order to proceed this AWB enter HAWB’s details.",
     "LM":
-    "The HAWB No. partially delivered at MAWB level outside ACS. In order to proceed this AWB change shipment type from CONSOL to DIRECT.\N Do you want to proceed to change shipment type to DIRECT ? ",
+        "The HAWB No. partially delivered at MAWB level outside ACS. In order to proceed this AWB change shipment type from CONSOL to DIRECT.\N Do you want to proceed to change shipment type to DIRECT ? ",
     "PF":
-    "You cannot book slot till payment is completed for the selected shipment.",
+        "You cannot book slot till payment is completed for the selected shipment.",
     "BF":
-    "You cannot book slot till breakdown is completed for the selected shipment.",
+        "You cannot book slot till breakdown is completed for the selected shipment.",
     "WL": "The location you've entered does not match the freight location.",
   };
 
@@ -95,7 +99,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
     List<Airport> matches = [];
     matches.addAll(airportList);
     matches.retainWhere(
-            (Airport s) => s.CityCode.toLowerCase().contains(query.toLowerCase()));
+        (Airport s) => s.CityCode.toLowerCase().contains(query.toLowerCase()));
     return matches;
   }
 
@@ -194,7 +198,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
       }
     } else {
       mode = "I";
-      for (AWB u in verifiedMawbList                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ) {
+      for (AWB u in verifiedMawbList) {
         mawbPrefixes.add(u.prefix);
       }
     }
@@ -220,18 +224,20 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
         rspMsg = resp
             .map<VerificationMsg>((json) => VerificationMsg.fromJson(json))
             .toList();
-        if (rspMsg.isNotEmpty)
-          if(rspMsg[0].Status=="S"){
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => WalkInCustomerNew(mawbList: mawbList,mode: modeSelected,)),
-            );
-          }
-          else{
-            responseTextUpdated = rspMsg[0].StrMessage.toString();
-            responseAlert(rspMsg[0].StrMessage.toString());
-          }
-
+        if (rspMsg.isNotEmpty) if (rspMsg[0].Status == "S") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => WalkInCustomerNew(
+                      mawbList: mawbList,
+                      mode: modeSelected,
+                    requestIdList:requestIdList,
+                    )),
+          );
+        } else {
+          responseTextUpdated = rspMsg[0].StrMessage.toString();
+          responseAlert(rspMsg[0].StrMessage.toString());
+        }
       }
       //
       // airportList =
@@ -368,12 +374,12 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
           } else if (rspMsg[0].errorCode == "WL") {
             responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
             deleteShipment(rspMsg[0].requestId);
-          }
-          else{
+          } else {
             verifiedMawbList.add(mawbList[0]);
-            verifiedHawbList=hawbList;
+            verifiedHawbList = hawbList;
+            requestIdList.add(rspMsg[0].requestId);
             setState(() {
-              isVerified=true;
+              isVerified = true;
             });
 
             print(isVerified);
@@ -430,13 +436,14 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
       print("masterAdded");
       print(masterAdded);
 
-      if (masterAdded != null) if (masterAdded == "y") {
+      if (masterAdded != null) if (masterAdded == "y" &&
+          shipmentTypeSelected != "Direct") {
         var userSelection = await showDialog(
           context: context,
           builder: (BuildContext context) => CustomConfirmDialog(
               title: "ADD HOUSE ?",
               description:
-              "Would you like Proceed to add House in this Master ",
+                  "Would you like Proceed to add House in this Master ",
               buttonText: "Okay",
               imagepath: 'assets/images/question.gif',
               isMobile: useMobileLayout),
@@ -562,36 +569,36 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
     var smallestDimension = MediaQuery.of(context).size.shortestSide;
     useMobileLayout = smallestDimension < 600;
     return Scaffold(
-      floatingActionButton: (mawbList.length != 0 )
+      floatingActionButton: (mawbList.length != 0)
           ? modeSelected == 0 || isVerified
-          ? FloatingActionButton.extended(
-        onPressed: () async {
-          verifyAirline();
-        },
-        label: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0),
-          child: const Text('Next',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.normal,
-                  color: Colors.white)),
-        ),
-        backgroundColor: Color(0xFF11249F),
-      )
-          : FloatingActionButton.extended(
-        onPressed: () async {
-          verifyAWBDetails();
-        },
-        label: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0),
-          child: const Text('Verify',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.normal,
-                  color: Colors.white)),
-        ),
-        backgroundColor: Color(0xFF11249F),
-      )
+              ? FloatingActionButton.extended(
+                  onPressed: () async {
+                    verifyAirline();
+                  },
+                  label: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                    child: const Text('Next',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white)),
+                  ),
+                  backgroundColor: Color(0xFF11249F),
+                )
+              : FloatingActionButton.extended(
+                  onPressed: () async {
+                    verifyAWBDetails();
+                  },
+                  label: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                    child: const Text('Verify',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white)),
+                  ),
+                  backgroundColor: Color(0xFF11249F),
+                )
           : SizedBox(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       body: Column(
@@ -764,9 +771,9 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                                   size: useMobileLayout
                                       ? 40
                                       : kIsWeb
-                                      ? 40
-                                      : MediaQuery.of(context).size.width /
-                                      18, //56,
+                                          ? 40
+                                          : MediaQuery.of(context).size.width /
+                                              18, //56,
                                   color: Colors.white,
                                 ),
                               ),
@@ -778,7 +785,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                                   fontSize: kIsWeb
                                       ? 48
                                       : MediaQuery.of(context).size.width /
-                                      18, //48,
+                                          18, //48,
                                   fontWeight: FontWeight.normal,
                                   color: Colors.white),
                             ),
@@ -809,7 +816,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                                   fontSize: kIsWeb
                                       ? 32
                                       : MediaQuery.of(context).size.width /
-                                      22, //48,
+                                          22, //48,
                                   fontWeight: FontWeight.normal,
                                   color: Colors.white),
                             ),
@@ -1009,51 +1016,51 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                       changeOnTap: mawbList.length == 0 ? true : false,
                     ),
                   ),
-                  (mawbList.length == 0 || !isVerified)
+                  (mawbList.length == 0 || (!isVerified && modeSelected != 0))
                       ? SizedBox()
                       : Container(
-                    padding: EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        addMawb();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        elevation: 4.0,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0)), //
-                        padding: const EdgeInsets.all(0.0),
-                      ),
-                      child: Container(
-                        height: 50,
-                        width: 150,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          gradient: LinearGradient(
-                            begin: Alignment.topRight,
-                            end: Alignment.bottomLeft,
-                            colors: [
-                              Color(0xFF1220BC),
-                              Color(0xFF3540E8),
-                            ],
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                              top: 8.0, bottom: 8.0),
-                          child: Align(
-                            alignment: Alignment.center,
-                            child: Text(
-                              'Add MAWB',
-                              style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.normal,
-                                  color: Colors.white),
+                          padding: EdgeInsets.all(8.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              addMawb();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              elevation: 4.0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0)), //
+                              padding: const EdgeInsets.all(0.0),
+                            ),
+                            child: Container(
+                              height: 50,
+                              width: 150,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topRight,
+                                  end: Alignment.bottomLeft,
+                                  colors: [
+                                    Color(0xFF1220BC),
+                                    Color(0xFF3540E8),
+                                  ],
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                    top: 8.0, bottom: 8.0),
+                                child: Align(
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'Add MAWB',
+                                    style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.normal,
+                                        color: Colors.white),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    ),
-                  )
+                        )
                 ],
               ),
             if (isSavingData)
@@ -1080,7 +1087,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             if (!isSavingData)
               Padding(
                 padding:
-                const EdgeInsets.only(top: 0.0, bottom: 10.0, left: 40.0),
+                    const EdgeInsets.only(top: 0.0, bottom: 10.0, left: 40.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -1217,120 +1224,121 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                 ),
               ),
             //SizedBox(height: 10),
-            if (mawbList.length > 0 )
+            if (mawbList.length > 0)
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: useMobileLayout
                     ? Padding(
-                  padding: EdgeInsets.only(left: 10, right: 10),
-                  child: Container(
-                    height: 128,
-                    width: MediaQuery.of(context).size.width / 1.03,
-                    child: Card(
-                      child: SizedBox(
-                        width: MediaQuery.of(context).size.width / 1.19,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemBuilder: (BuildContext, index) {
-                            AWB _awblist = mawbList.elementAt(index);
-                            return buildMawbListMobile(_awblist, index);
-                          },
-                          itemCount: mawbList.length,
-                          shrinkWrap: true,
-                          padding: EdgeInsets.all(5),
+                        padding: EdgeInsets.only(left: 10, right: 10),
+                        child: Container(
+                          height: 128,
+                          width: MediaQuery.of(context).size.width / 1.03,
+                          child: Card(
+                            child: SizedBox(
+                              width: MediaQuery.of(context).size.width / 1.19,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemBuilder: (BuildContext, index) {
+                                  AWB _awblist = mawbList.elementAt(index);
+                                  return buildMawbListMobile(_awblist, index);
+                                },
+                                itemCount: mawbList.length,
+                                shrinkWrap: true,
+                                padding: EdgeInsets.all(5),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                )
+                      )
                     : modeSelected ==
-                    1 // widget.modeSelected.toLowerCase().contains("pick")
-                    ? isVerified
-                    ? Padding(
-                  padding: EdgeInsets.only(left: 40, right: 20),
-                  child: Container(
-                    height: 150,
-                    width:
-                    MediaQuery.of(context).size.width / 1.1,
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                            top: 10.0, bottom: 10.0, left: 40.0),
-                        child: SizedBox(
-                          width:
-                          MediaQuery.of(context).size.width /
-                              1.19,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            //rphysics: NeverScrollableScrollPhysics(),
-                            itemBuilder: (BuildContext, index) {
-                              AWB _awblist =
-                              verifiedMawbList.elementAt(index);
-                              return buildMawbListIpad12(
-                                  _awblist, index);
-                            },
-                            itemCount: verifiedMawbList.length,
-                            shrinkWrap: true,
-                            padding: EdgeInsets.all(5),
+                            1 // widget.modeSelected.toLowerCase().contains("pick")
+                        ? isVerified
+                            ? Padding(
+                                padding: EdgeInsets.only(left: 40, right: 20),
+                                child: Container(
+                                  height: 150,
+                                  width:
+                                      MediaQuery.of(context).size.width / 1.1,
+                                  child: Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          top: 10.0, bottom: 10.0, left: 40.0),
+                                      child: SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width /
+                                                1.19,
+                                        child: ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          //rphysics: NeverScrollableScrollPhysics(),
+                                          itemBuilder: (BuildContext, index) {
+                                            AWB _awblist = verifiedMawbList
+                                                .elementAt(index);
+                                            return buildMawbListIpad12(
+                                                _awblist, index);
+                                          },
+                                          itemCount: verifiedMawbList.length,
+                                          shrinkWrap: true,
+                                          padding: EdgeInsets.all(5),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Padding(
+                                padding: EdgeInsets.only(left: 40, right: 20),
+                                child: Container(
+                                  height: 180,
+                                  width:
+                                      MediaQuery.of(context).size.width / 1.1,
+                                  child: Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          top: 10.0, bottom: 10.0, left: 40.0),
+                                      child: SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width /
+                                                1.19,
+                                        child: ListView.builder(
+                                          //scrollDirection: Axis.horizontal,
+                                          physics:
+                                              NeverScrollableScrollPhysics(),
+                                          itemBuilder: (BuildContext, index) {
+                                            AWB _awblist =
+                                                mawbList.elementAt(index);
+                                            return buildMawbListIpad(
+                                                _awblist, index);
+                                          },
+                                          itemCount: mawbList.length,
+                                          shrinkWrap: true,
+                                          padding: EdgeInsets.all(5),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                        : Padding(
+                            padding: EdgeInsets.only(left: 40, right: 20),
+                            child: Container(
+                              // height: 150,
+                              width: MediaQuery.of(context).size.width / 1.1,
+                              child: SizedBox(
+                                width: MediaQuery.of(context).size.width / 1.19,
+                                child: ListView.builder(
+                                  // scrollDirection: Axis.horizontal,
+                                  physics: NeverScrollableScrollPhysics(),
+                                  itemBuilder: (BuildContext, index) {
+                                    AWB _awblist = mawbList.elementAt(index);
+                                    return buildMawbListIpad(_awblist, index);
+                                  },
+                                  itemCount: mawbList.length,
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.all(5),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
-                  ),
-                )
-                    : Padding(
-                  padding: EdgeInsets.only(left: 40, right: 20),
-                  child: Container(
-                    height: 150,
-                    width:
-                    MediaQuery.of(context).size.width / 1.1,
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                            top: 10.0, bottom: 10.0, left: 40.0),
-                        child: SizedBox(
-                          width:
-                          MediaQuery.of(context).size.width /
-                              1.19,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            //rphysics: NeverScrollableScrollPhysics(),
-                            itemBuilder: (BuildContext, index) {
-                              AWB _awblist =
-                              mawbList.elementAt(index);
-                              return buildMawbListIpad12(
-                                  _awblist, index);
-                            },
-                            itemCount: mawbList.length,
-                            shrinkWrap: true,
-                            padding: EdgeInsets.all(5),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                )
-                    : Padding(
-                  padding: EdgeInsets.only(left: 40, right: 20),
-                  child: Container(
-                    // height: 150,
-                    width: MediaQuery.of(context).size.width / 1.1,
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width / 1.19,
-                      child: ListView.builder(
-                        // scrollDirection: Axis.horizontal,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemBuilder: (BuildContext, index) {
-                          AWB _awblist = mawbList.elementAt(index);
-                          return buildMawbListIpad(_awblist, index);
-                        },
-                        itemCount: mawbList.length,
-                        shrinkWrap: true,
-                        padding: EdgeInsets.all(5),
-                      ),
-                    ),
-                  ),
-                ),
               ),
             SizedBox(height: 10),
 
@@ -1434,12 +1442,12 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             //       )
             //     :
 
-            if ((mawbList.length > 0 ) && modeSelected == 1)
+            if ((mawbList.length > 0) && modeSelected == 1)
               Expanded(
                 flex: 0,
                 child: Padding(
                   padding:
-                  const EdgeInsets.only(top: 2.0, bottom: 0.0, left: 40.0),
+                      const EdgeInsets.only(top: 2.0, bottom: 0.0, left: 40.0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1453,76 +1461,78 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                             child: (hawbListToBind.length == 0)
                                 ? Container()
                                 : selectedMawbNo == ""
-                                ? Text(" ")
-                                : Text(
-                              " HAWB List for MAWB# " +
-                                  selectedMawbNo,
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF11249F),
-                              ),
-                            ),
+                                    ? Text(" ")
+                                    : Text(
+                                        " HAWB List for MAWB# " +
+                                            selectedMawbNo,
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF11249F),
+                                        ),
+                                      ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 10.0),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                txtMawbnoH.text = selectedMawbNo;
-                                txtPrefixH.text = selectedPrefix;
-                                txtOriginH.text = selectedOrigin;
+                          shipmentTypeSelected != "Direct"
+                              ? Padding(
+                                  padding: const EdgeInsets.only(left: 10.0),
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      txtMawbnoH.text = selectedMawbNo;
+                                      txtPrefixH.text = selectedPrefix;
+                                      txtOriginH.text = selectedOrigin;
 
-                                txthawbnoH.text = "";
-                                txtpickupnopH.text = "";
-                                txtgrwtnopH.text = "";
-                                txtnatureofgoodsH.text = "";
+                                      txthawbnoH.text = "";
+                                      txtpickupnopH.text = "";
+                                      txtgrwtnopH.text = "";
+                                      txtnatureofgoodsH.text = "";
 
-                                showDialog(
-                                    barrierDismissible: false,
-                                    context: context,
-                                    builder: (context) {
-                                      return buildHawbPopUpIpad();
-                                    });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                elevation: 4.0,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                    BorderRadius.circular(10.0)), //
-                                padding: const EdgeInsets.all(0.0),
-                              ),
-                              child: Container(
-                                height: 50,
-                                width: 150,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topRight,
-                                    end: Alignment.bottomLeft,
-                                    colors: [
-                                      Color(0xFF1220BC),
-                                      Color(0xFF3540E8),
-                                    ],
-                                  ),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                      top: 8.0, bottom: 8.0),
-                                  child: Align(
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      'Add HAWB',
-                                      style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.normal,
-                                          color: Colors.white),
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return buildHawbPopUpIpad();
+                                          });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      elevation: 4.0,
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10.0)), //
+                                      padding: const EdgeInsets.all(0.0),
                                     ),
+                                    child: Container(
+                                      height: 50,
+                                      width: 150,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topRight,
+                                          end: Alignment.bottomLeft,
+                                          colors: [
+                                            Color(0xFF1220BC),
+                                            Color(0xFF3540E8),
+                                          ],
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                            top: 8.0, bottom: 8.0),
+                                        child: Align(
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            'Add HAWB',
+                                            style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.normal,
+                                                color: Colors.white),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    //Text('CONTAINED BUTTON'),
                                   ),
-                                ),
-                              ),
-                              //Text('CONTAINED BUTTON'),
-                            ),
-                          ),
+                                )
+                              : SizedBox(),
                         ],
                       ),
                       SizedBox(height: 10),
@@ -1546,49 +1556,74 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                   scrollDirection: Axis.vertical,
                   child: useMobileLayout
                       ? Padding(
-                    padding: EdgeInsets.only(left: 0, right: 0),
-                    child: Container(
-                      width: MediaQuery.of(context).size.width / 1.03,
-                      child: SizedBox(
-                        width: MediaQuery.of(context).size.width / 1.19,
-                        child: ListView.builder(
-                          // scrollDirection: Axis.vertical,
-                          physics: NeverScrollableScrollPhysics(),
-                          itemBuilder: (BuildContext, index) {
-                            AWB _awblist =
-                            hawbListToBind.elementAt(index);
+                          padding: EdgeInsets.only(left: 0, right: 0),
+                          child: Container(
+                            width: MediaQuery.of(context).size.width / 1.03,
+                            child: SizedBox(
+                              width: MediaQuery.of(context).size.width / 1.19,
+                              child: ListView.builder(
+                                // scrollDirection: Axis.vertical,
+                                physics: NeverScrollableScrollPhysics(),
+                                itemBuilder: (BuildContext, index) {
+                                  AWB _awblist =
+                                      hawbListToBind.elementAt(index);
 
-                            return buildHawbListMobile(_awblist, index);
-                          },
-                          itemCount: hawbListToBind.length,
-                          shrinkWrap: true,
-                          padding: EdgeInsets.all(5),
-                        ),
-                      ),
-                    ),
-                  )
-                      : Padding(
-                    padding: EdgeInsets.only(left: 40, right: 20),
-                    child: Container(
-                      width: MediaQuery.of(context).size.width / 1.1,
-                      child: SizedBox(
-                        width: MediaQuery.of(context).size.width / 1.19,
-                        child: ListView.builder(
-                          // scrollDirection: Axis.vertical,
-                          physics: NeverScrollableScrollPhysics(),
-                          itemBuilder: (BuildContext, index) {
-                            AWB _awblist =
-                            hawbListToBind.elementAt(index);
+                                  return buildHawbListMobile(_awblist, index);
+                                },
+                                itemCount: hawbListToBind.length,
+                                shrinkWrap: true,
+                                padding: EdgeInsets.all(5),
+                              ),
+                            ),
+                          ),
+                        )
+                      : isVerified
+                          ? Padding(
+                              padding: EdgeInsets.only(left: 40, right: 20),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width / 1.1,
+                                child: SizedBox(
+                                  width:
+                                      MediaQuery.of(context).size.width / 1.19,
+                                  child: ListView.builder(
+                                    // scrollDirection: Axis.vertical,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemBuilder: (BuildContext, index) {
+                                      AWB _awblist =
+                                      verifiedMawbList.elementAt(index);
 
-                            return buildHawbListIpad(_awblist, index);
-                          },
-                          itemCount: hawbListToBind.length,
-                          shrinkWrap: true,
-                          padding: EdgeInsets.all(5),
-                        ),
-                      ),
-                    ),
-                  ),
+                                      return buildHawbListIpad(_awblist, index);
+                                    },
+                                    itemCount: verifiedMawbList.length,
+                                    shrinkWrap: true,
+                                    padding: EdgeInsets.all(5),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Padding(
+                              padding: EdgeInsets.only(left: 40, right: 20),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width / 1.1,
+                                child: SizedBox(
+                                  width:
+                                      MediaQuery.of(context).size.width / 1.19,
+                                  child: ListView.builder(
+                                    // scrollDirection: Axis.vertical,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemBuilder: (BuildContext, index) {
+                                      AWB _awblist =
+                                          hawbListToBind.elementAt(index);
+
+                                      return buildHawbListIpad(_awblist, index);
+                                    },
+                                    itemCount: hawbListToBind.length,
+                                    shrinkWrap: true,
+                                    padding: EdgeInsets.all(5),
+                                  ),
+                                ),
+                              ),
+                            ),
                 ),
               ),
           ]),
@@ -2142,7 +2177,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             txtgrwtnopM.text = _awb.grwt;
             txtnatureofgoodsM.text = _awb.natureofgoods;
             commoditySelected = _awb.natureofgoods;
-
+            print(_awb.natureofgoods);
             showDialog(
                 barrierDismissible: false,
                 context: context,
@@ -2717,7 +2752,8 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                           ),
                         ),
                         dropdownColor: Colors.white,
-                        value: 'Select',
+                        value:
+                            itemIndex != null ? shipmentTypeSelected : 'Select',
                         items: ['Select', 'Direct', 'Consol']
                             .map<DropdownMenuItem<String>>((String value) {
                           return DropdownMenuItem<String>(
@@ -2829,7 +2865,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                         borderRadius: BorderRadius.circular(4.0),
                       ),
                       child: TypeAheadField(
-                        //he
+                          //he
                           textFieldConfiguration: TextFieldConfiguration(
                               keyboardType: TextInputType.numberWithOptions(
                                   decimal: false, signed: true),
@@ -2911,7 +2947,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                         counterText: "",
                         hintStyle: TextStyle(color: Colors.grey),
                         contentPadding:
-                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                         isDense: true,
                       ),
                       style: TextStyle(
@@ -2937,7 +2973,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                         borderRadius: BorderRadius.circular(4.0),
                       ),
                       child: TypeAheadField(
-                        //he
+                          //he
                           textFieldConfiguration: TextFieldConfiguration(
                               style: TextStyle(
                                 fontSize: 18.0,
@@ -3112,7 +3148,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                             : "Enter drop-off NoP",
                         hintStyle: TextStyle(color: Colors.grey),
                         contentPadding:
-                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                         isDense: true,
                       ),
                       style: TextStyle(
@@ -3158,7 +3194,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                         hintText: "Enter NoP gross wt.",
                         hintStyle: TextStyle(color: Colors.grey),
                         contentPadding:
-                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                         isDense: true,
                       ),
                       style: TextStyle(
@@ -3273,20 +3309,24 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                       ),
                       hint: Text("---- Select ----", style: iPadTextFontStyle),
                       dropdownColor: Colors.white,
-                      value: selectedBaseForCommId,
+                      value: itemIndex != null
+                          ? commoditySelectedID
+                          : selectedBaseForCommId,
                       // "Select",
                       items: commodityList
                           .map((comm) => DropdownMenuItem(
-                        value: comm.shcId,
-                        child: Text(
-                          comm.specialHandlingCode.trim(),
-                          style: iPadTextFontStyle,
-                        ),
-                      ))
+                                value: comm.shcId,
+                                child: Text(
+                                  comm.specialHandlingCode.trim(),
+                                  style: iPadTextFontStyle,
+                                ),
+                              ))
                           .toList(),
-                      onChanged: (value) {
+                      onChanged: (int? value) {
                         setState(() {
                           commoditySelected = value.toString();
+                          commoditySelectedID = value!;
+                          print(commoditySelected);
                         });
                       },
                     ),
@@ -3424,8 +3464,9 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                 print("_newMawbRow.index ==" + _newMawbRow.index.toString());
                 if (modeSelected == 1) {
                   mawbList = [];
+                  hawbList = [];
                   if (itemIndex != null) {
-                    mawbList[itemIndex]=_newMawbRow;
+                    mawbList[itemIndex] = _newMawbRow;
                   } else {
                     mawbList.add(_newMawbRow);
                   }
@@ -3434,7 +3475,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                 } else {
                   print("+++++ $itemIndex");
                   if (itemIndex != null) {
-                    mawbList[itemIndex]=_newMawbRow;
+                    mawbList[itemIndex] = _newMawbRow;
                     print("edit");
                   } else {
                     mawbList.add(_newMawbRow);
@@ -3647,23 +3688,23 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
 
       var queryParams = modeSelected == 1
           ? hawbList.isEmpty
-          ? {
-        //import
-        "VTData": json.decode(finalWalkInTableString),
-        "MAWBData": json.decode(finalMawbPickUpTableString),
-        "HawbData": json.decode(finalHawbTableString),
-      }
+              ? {
+                  //import
+                  "VTData": json.decode(finalWalkInTableString),
+                  "MAWBData": json.decode(finalMawbPickUpTableString),
+                  "HawbData": json.decode(finalHawbTableString),
+                }
+              : {
+                  //import
+                  "VTData": json.decode(finalWalkInTableString),
+                  "MAWBData": json.decode(finalMawbPickUpTableString),
+                  "HawbData": json.decode(finalHawbTableString),
+                }
           : {
-        //import
-        "VTData": json.decode(finalWalkInTableString),
-        "MAWBData": json.decode(finalMawbPickUpTableString),
-        "HawbData": json.decode(finalHawbTableString),
-      }
-          : {
-        //export
-        "VTData": json.decode(finalWalkInTableString),
-        "MAWBData": json.decode(finalMawbDropOffTableString),
-      };
+              //export
+              "VTData": json.decode(finalWalkInTableString),
+              "MAWBData": json.decode(finalMawbDropOffTableString),
+            };
       await Global()
           .postData(
         modeSelected == 1
@@ -3864,7 +3905,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                           counterText: "",
                           hintStyle: TextStyle(color: Colors.grey),
                           contentPadding:
-                          EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                              EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                           isDense: true,
                         ),
                         style: TextStyle(
@@ -3979,7 +4020,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                           counterText: "",
                           hintStyle: TextStyle(color: Colors.grey),
                           contentPadding:
-                          EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                              EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                           isDense: true,
                         ),
                         style: TextStyle(
@@ -4053,7 +4094,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                       hintText: "Enter HAWB No.",
                       hintStyle: TextStyle(color: Colors.grey),
                       contentPadding:
-                      EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                          EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                       isDense: true,
                     ),
                     style: TextStyle(
@@ -4190,7 +4231,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                           hintText: "Enter pick-up NoP",
                           hintStyle: TextStyle(color: Colors.grey),
                           contentPadding:
-                          EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                              EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                           isDense: true,
                         ),
                         style: TextStyle(
@@ -4234,7 +4275,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                           hintText: "Enter NoP gross wt.",
                           hintStyle: TextStyle(color: Colors.grey),
                           contentPadding:
-                          EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                              EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                           isDense: true,
                         ),
                         style: TextStyle(
@@ -4288,7 +4329,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                     hintText: "Enter nature of goods",
                     hintStyle: TextStyle(color: Colors.grey),
                     contentPadding:
-                    EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                     isDense: true,
                     counterText: "",
                   ),
@@ -4534,7 +4575,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                         hintText: "Enter origin",
                         hintStyle: TextStyle(color: Colors.grey),
                         contentPadding:
-                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                         isDense: true,
                       ),
                       style: TextStyle(
@@ -4576,7 +4617,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                         hintText: "Enter prefix",
                         hintStyle: TextStyle(color: Colors.grey),
                         contentPadding:
-                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                         isDense: true,
                         counterText: "",
                       ),
@@ -4613,7 +4654,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                         hintText: "Enter MAWB No.",
                         hintStyle: TextStyle(color: Colors.grey),
                         contentPadding:
-                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                         isDense: true,
                         counterText: "",
                       ),
@@ -4681,7 +4722,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                       borderRadius: BorderRadius.circular(4.0),
                     ),
                     child: TextField(
-                      maxLength: 11,
+                      maxLength: 16,
                       keyboardType: TextInputType.text,
                       textCapitalization: TextCapitalization.characters,
                       controller: txthawbnoH,
@@ -4690,7 +4731,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                         hintText: "Enter HAWB No.",
                         hintStyle: TextStyle(color: Colors.grey),
                         contentPadding:
-                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                         isDense: true,
                         counterText: "",
                       ),
@@ -4720,7 +4761,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                       controller: txtpickupnopH,
 
                       keyboardType:
-                      TextInputType.numberWithOptions(decimal: false),
+                          TextInputType.numberWithOptions(decimal: false),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp('[0-9]')),
                       ],
@@ -4731,7 +4772,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                         counterText: "",
                         hintStyle: TextStyle(color: Colors.grey),
                         contentPadding:
-                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                         isDense: true,
                       ),
                       style: TextStyle(
@@ -4777,7 +4818,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                         hintText: "Enter NoP gross wt.",
                         hintStyle: TextStyle(color: Colors.grey),
                         contentPadding:
-                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                         isDense: true,
                       ),
                       style: TextStyle(
@@ -4830,7 +4871,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                   hintText: "Enter nature of goods",
                   hintStyle: TextStyle(color: Colors.grey),
                   contentPadding:
-                  EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                   isDense: true,
                   counterText: "",
                 ),
@@ -4907,7 +4948,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
 
                 print("_newHawbRow.index ==" + _newHawbRow.index.toString());
                 if (itemIndex != null) {
-                  hawbList[itemIndex]=_newHawbRow;
+                  hawbList[itemIndex] = _newHawbRow;
                 } else {
                   hawbList.add(_newHawbRow);
                 }
@@ -5054,7 +5095,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                           hintText: "Enter origin",
                           hintStyle: TextStyle(color: Colors.grey),
                           contentPadding:
-                          EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                              EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                           isDense: true,
                         ),
                         style: TextStyle(
@@ -5121,7 +5162,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                           hintText: "Enter prefix",
                           hintStyle: TextStyle(color: Colors.grey),
                           contentPadding:
-                          EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                              EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                           isDense: true,
                         ),
                         style: TextStyle(
@@ -5156,7 +5197,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                           hintText: "Enter MAWB No.",
                           hintStyle: TextStyle(color: Colors.grey),
                           contentPadding:
-                          EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                              EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                           isDense: true,
                         ),
                         style: TextStyle(
@@ -5315,7 +5356,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                       hintText: "Enter HAWB No.",
                       hintStyle: TextStyle(color: Colors.grey),
                       contentPadding:
-                      EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                          EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                       isDense: true,
                     ),
                     style: TextStyle(
@@ -5385,7 +5426,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                           hintText: "Enter pick-up NoP",
                           hintStyle: TextStyle(color: Colors.grey),
                           contentPadding:
-                          EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                              EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                           isDense: true,
                         ),
                         style: TextStyle(
@@ -5430,7 +5471,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                           hintText: "Enter NoP gross wt.",
                           hintStyle: TextStyle(color: Colors.grey),
                           contentPadding:
-                          EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                              EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                           isDense: true,
                         ),
                         style: TextStyle(
@@ -5483,7 +5524,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                     hintText: "Enter nature of goods",
                     hintStyle: TextStyle(color: Colors.grey),
                     contentPadding:
-                    EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                     isDense: true,
                   ),
                   style: TextStyle(

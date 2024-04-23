@@ -19,8 +19,14 @@ import '../widgets/customdialogue.dart';
 class WalkInCustomerNew extends StatefulWidget {
   final List<AWB> mawbList;
   final int mode;
+  final List<String> requestIdList;
 
-  WalkInCustomerNew({Key? key, required this.mawbList, required this.mode}) : super(key: key);
+  WalkInCustomerNew(
+      {Key? key,
+      required this.mawbList,
+      required this.mode,
+      required this.requestIdList})
+      : super(key: key);
 
   @override
   State<WalkInCustomerNew> createState() => _WalkInCustomerNewState();
@@ -82,7 +88,8 @@ class _WalkInCustomerNewState extends State<WalkInCustomerNew> {
 
     super.dispose();
   }
-  responseAlert(errorCode) async{
+
+  responseAlert(errorCode) async {
     var userSelection = await showDialog(
       context: context,
       builder: (BuildContext context) => CustomAlertMessageDialogNew(
@@ -92,61 +99,66 @@ class _WalkInCustomerNewState extends State<WalkInCustomerNew> {
           isMobile: useMobileLayout),
     );
     print("userSelection ==" + userSelection.toString());
-    if(userSelection){
-      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(
-          builder: (context) => YardCheckInNew()), (Route route) => false);
+    if (userSelection) {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+        builder: (context) => YardCheckInNew(),
+      ));
     }
   }
-   generateVT(mawbData,vtData) async {
-     if (modeSelected == 0) {
 
+  generateVT(mawbData, vtData, requestIds) async {
+    var queryParams = {};
+    if (widget.mode == 0) {
+      queryParams = {
+        "VTData": json.decode(vtData),
+        "MAWBData": json.decode(mawbData)
+      };
+    } else {
+      queryParams = {
+        "VTData": json.decode(vtData),
+        "RequestIds": json.decode(requestIds)
+      };
+    }
 
-     } else {
-
-     }
-    var queryParams = {"VTData":  json.decode(vtData), "MAWBData":  json.decode(mawbData)};
     await Global()
-         .postData(
-       Settings.SERVICES['SaveExportData'],
-       queryParams,
-     )
-         .then((response) {
-       print("data received ");
-       print(json.decode(response.body)['d']);
+        .postData(
+      widget.mode == 0
+          ? Settings.SERVICES['SaveExportData']
+          : Settings.SERVICES['SaveImportData'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
 
-       if (json.decode(response.body)['d'] != null) {
-         var msg = json.decode(response.body)['d'];
-         var resp = json.decode(msg).cast<Map<String, dynamic>>();
+      if (json.decode(response.body)['d'] != null) {
+        var msg = json.decode(response.body)['d'];
+        var resp = json.decode(msg).cast<Map<String, dynamic>>();
 
-         List<ResponseMsg> rspMsg = [];
-         rspMsg = resp
-             .map<ResponseMsg>((json) => ResponseMsg.fromJson(json))
-             .toList();
-         if (rspMsg.isNotEmpty)
-           if(rspMsg[0].Status=="S"){
-             responseAlert(rspMsg[0].StrMessage);
-
-           }
-           else{
-
-           }
-
-       }
-       //
-       // airportList =
-       //     resp.map<Airport>((json) => Airport.fromJson(json)).toList();
-       //
-       // print("length baseStationList = " + airportList.length.toString());
-       setState(() {
-         var isLoading = false;
-       });
-     }).catchError((onError) {
-       // setState(() {
-       //   isLoading = false;
-       // });
-       print(onError);
-     });
+        List<ResponseMsg> rspMsg = [];
+        rspMsg = resp
+            .map<ResponseMsg>((json) => ResponseMsg.fromJson(json))
+            .toList();
+        if (rspMsg.isNotEmpty) if (rspMsg[0].Status == "S") {
+          responseAlert(rspMsg[0].StrMessage);
+        } else {}
+      }
+      //
+      // airportList =
+      //     resp.map<Airport>((json) => Airport.fromJson(json)).toList();
+      //
+      // print("length baseStationList = " + airportList.length.toString());
+      setState(() {
+        var isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
   }
+
   @override
   Widget build(BuildContext context) {
     var smallestDimension = MediaQuery.of(context).size.shortestSide;
@@ -943,11 +955,18 @@ class _WalkInCustomerNewState extends State<WalkInCustomerNew> {
                                     waLKINTableString = a;
                                   }
 
-                                  String mawbTableString = "",finalMawbTableString="";
+                                  String mawbTableString = "",
+                                      finalMawbTableString = "";
                                   int iMawb = 0;
+                                  String shiptype = "";
+                                  if (widget.mode == 0) {
+                                    shiptype = "direct";
+                                  } else {
+                                    shiptype = "consol";
+                                  }
                                   for (AWB u in widget.mawbList) {
                                     String a = "{\"MAWBId\":\"${u.index}\"," +
-                                        "\"shipmentType\":\"${u.shiptype.toLowerCase()}\"," +
+                                        "\"shipmentType\":\"$shiptype\"," +
                                         "\"origin\":\"${u.origin}\"," +
                                         "\"destination\":\"$selectedBaseStation\"," +
                                         "\"prefix\":\"${u.prefix}\"," +
@@ -967,8 +986,27 @@ class _WalkInCustomerNewState extends State<WalkInCustomerNew> {
 
                                     iMawb++;
                                   }
-                                  finalMawbTableString = "[" + mawbTableString + "]";
-                                  generateVT(finalMawbTableString,waLKINTableString);
+                                  finalMawbTableString =
+                                      "[" + mawbTableString + "]";
+
+                                  String reqTableString = "",
+                                      finalReqTableString = "";
+                                  int iReq = 0;
+
+                                  for (String reqId in widget.requestIdList) {
+                                    String a = "{\"RequestId\":\"$reqId\" }";
+
+                                    if (iReq == 0)
+                                      reqTableString = reqTableString + a;
+                                    else
+                                      reqTableString = reqTableString + "," + a;
+                                    iReq++;
+                                  }
+                                  finalReqTableString =
+                                      "[" + reqTableString + "]";
+
+                                  generateVT(finalMawbTableString,
+                                      waLKINTableString, finalReqTableString);
                                 } else {
                                   showAlertDialog(context, "OK", "Alert",
                                       "Kindly fill all fields highlighted in Red");
@@ -1026,6 +1064,4 @@ class _WalkInCustomerNewState extends State<WalkInCustomerNew> {
       ),
     );
   }
-
-
 }

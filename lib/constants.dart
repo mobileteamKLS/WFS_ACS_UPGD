@@ -408,5 +408,6 @@ class Settings {
     "GetCommodity":"/GetCommodityTypeList",
     "DeleteShipment":"/DeleteImportShipment",
     "SaveExportData":"/SaveExportVTData",
+    "SaveImportData":"/SaveImportVTWithShipment",
   };
 }
