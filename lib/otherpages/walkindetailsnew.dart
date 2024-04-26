@@ -58,6 +58,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
   List<AWB> hawbList = [];
   List<AWB> verifiedMawbList = [];
   List<AWB> verifiedHawbList = [];
+  List<AWB> filteredHawbList = [];
 
   List<MAWB> mawbListSave = [];
   List<MAWBDropoff> mawbDropOffListSave = [];
@@ -375,8 +376,10 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
             deleteShipment(rspMsg[0].requestId);
           } else {
-            verifiedMawbList.add(mawbList[0]);
-            verifiedHawbList = hawbList;
+            if(!verifiedMawbList.any((awb) => awb.mawbno == mawbList[0].mawbno)){
+              verifiedMawbList.add(mawbList[0]);
+            }
+            verifiedHawbList.add(hawbList[0]);
             requestIdList.add(rspMsg[0].requestId);
             setState(() {
               isVerified = true;
@@ -1590,11 +1593,11 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                                     physics: NeverScrollableScrollPhysics(),
                                     itemBuilder: (BuildContext, index) {
                                       AWB _awblist =
-                                      verifiedMawbList.elementAt(index);
+                                      filteredHawbList.elementAt(index);
 
                                       return buildHawbListIpad(_awblist, index);
                                     },
-                                    itemCount: verifiedMawbList.length,
+                                    itemCount: filteredHawbList.length,
                                     shrinkWrap: true,
                                     padding: EdgeInsets.all(5),
                                   ),
@@ -1641,23 +1644,23 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
       children: [
         GestureDetector(
           onDoubleTap: () {
-            txtMawbnoM.text = _awb.mawbno;
-            txtPrefixM.text = _awb.prefix;
-            txtOriginM.text = _awb.origin;
-            txtpickupnopM.text = _awb.nop;
-            txtgrwtnopM.text = _awb.grwt;
-            txtnatureofgoodsM.text = _awb.natureofgoods;
-
-            commoditySelected = _awb.natureofgoods;
-
-            showDialog(
-                barrierDismissible: false,
-                context: context,
-                builder: (context) {
-                  return useMobileLayout
-                      ? buildMawbPopUpMobile()
-                      : buildMawbPopUpIpad();
-                });
+            // txtMawbnoM.text = _awb.mawbno;
+            // txtPrefixM.text = _awb.prefix;
+            // txtOriginM.text = _awb.origin;
+            // txtpickupnopM.text = _awb.nop;
+            // txtgrwtnopM.text = _awb.grwt;
+            // txtnatureofgoodsM.text = _awb.natureofgoods;
+            //
+            // commoditySelected = _awb.natureofgoods;
+            //
+            // showDialog(
+            //     barrierDismissible: false,
+            //     context: context,
+            //     builder: (context) {
+            //       return useMobileLayout
+            //           ? buildMawbPopUpMobile()
+            //           : buildMawbPopUpIpad();
+            //     });
           },
           onTap: () {
             runFilter(_awb.mawbno, _awb.origin, _awb.prefix);
@@ -1688,9 +1691,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                 child: Align(
                   alignment: Alignment.center,
                   child: Text(
-                    _awb.mawbno.substring(0, 3) +
-                        " \n " +
-                        _awb.mawbno.substring(4, _awb.mawbno.length),
+                    "${_awb.prefix}\n${_awb.mawbno}",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 18,
@@ -1962,7 +1963,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                                           color: Color(0xFF11249F))),
                                   SizedBox(height: 3),
                                   Text(
-                                    _awb.hawbno,
+                                    _awb.mawbno,
                                     style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.normal,
@@ -2135,6 +2136,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                 // });
                 print("^^^^^^ $index");
                 hawbListToBind.removeAt(index);
+                hawbList.removeAt(index);
                 setState(() {});
               }
             },
@@ -2218,7 +2220,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                                           color: Color(0xFF11249F))),
                                   SizedBox(height: 3),
                                   Text(
-                                    _awb.mawbno,
+                                    "${_awb.prefix}-${_awb.mawbno}",
                                     style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.normal,
@@ -2765,7 +2767,9 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                         }).toList(),
                         onChanged: (value) {
                           setState(() {
+                            print("$shipmentTypeSelected----");
                             shipmentTypeSelected = value.toString();
+                            print("$shipmentTypeSelected=====");
                           });
                         },
                       ),
@@ -3463,11 +3467,13 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
 
                 print("_newMawbRow.index ==" + _newMawbRow.index.toString());
                 if (modeSelected == 1) {
-                  mawbList = [];
-                  hawbList = [];
+                  // mawbList = [];
+                  // hawbList = [];
                   if (itemIndex != null) {
                     mawbList[itemIndex] = _newMawbRow;
                   } else {
+                    mawbList = [];
+                    hawbList = [];
                     mawbList.add(_newMawbRow);
                   }
                   isVerified = false;
@@ -3486,7 +3492,9 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                   selectedMawbNo = txtMawbnoM.text;
                   selectedPrefix = txtPrefixM.text;
                   selectedOrigin = txtOriginM.text;
+                  print("^^^^^^^^^^$selectedMawbNo");
                   runFilter(selectedMawbNo, selectedOrigin, selectedPrefix);
+                  print("$selectedMawbNo ^^^^^^^^^^");
                   txtOriginM.text = "";
                   txtPrefixM.text = "";
                   txtOriginM.text = "";
@@ -4950,9 +4958,10 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                 if (itemIndex != null) {
                   hawbList[itemIndex] = _newHawbRow;
                 } else {
+                  hawbList=[];
                   hawbList.add(_newHawbRow);
                 }
-
+                isVerified = false;
                 setState(() {
                   txtOriginH.text = "";
                   txtPrefixH.text = "";
@@ -5661,16 +5670,27 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
     print("hawbList.length = " + hawbList.length.toString());
 
     List<AWB> results = [];
+    List<AWB> results2 = [];
     results.addAll(hawbList);
-
-    results.retainWhere((AWB element) =>
-        element.mawbno.toLowerCase().contains(enteredKeyword.toLowerCase()));
-
+    results2.addAll(verifiedHawbList);
+    print("results.length r = " + results.length.toString());
+    results.where((AWB element) =>
+        element.index==mawbList[0].index);
+    results2.where((AWB awb) => awb.mawbno == enteredKeyword).toList();
     print("results.length = " + results.length.toString());
+    print("results2.length = " + results2.length.toString());
+    for (AWB i in results) {
+      i.mawbno = enteredKeyword;
+      i.nop = mawbList[0].nop;
+      i.grwt = mawbList[0].grwt;
+      i.prefix = mawbList[0].prefix;
+    }
 
     setState(() {
       hawbListToBind = results;
+      filteredHawbList = results2;
       selectedMawbNo = enteredKeyword;
+      print("******$selectedMawbNo");
       selectedOrigin = origin;
       selectedPrefix = prefix;
     });

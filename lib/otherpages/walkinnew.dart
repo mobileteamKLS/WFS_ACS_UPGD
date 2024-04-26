@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_advanced_switch/flutter_advanced_switch.dart';
 import 'package:luxair/datastructure/slotbooking.dart';
 import 'package:luxair/otherpages/yardcheckinnew.dart';
@@ -359,6 +360,10 @@ class _WalkInCustomerNewState extends State<WalkInCustomerNew> {
                                         keyboardType: TextInputType.text,
                                         textCapitalization:
                                             TextCapitalization.characters,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.deny(
+                                              RegExp(r'[!@#$%^&*(),.?":{}|<>]'))
+                                        ],
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           hintText: "Enter Vehicle No.",
@@ -481,6 +486,10 @@ class _WalkInCustomerNewState extends State<WalkInCustomerNew> {
                                         keyboardType: TextInputType.text,
                                         textCapitalization:
                                             TextCapitalization.characters,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.deny(
+                                              RegExp(r'[!@#$%^&*(),.?":{}|<>]'))
+                                        ],
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           hintText: "Enter driver name",
@@ -545,6 +554,9 @@ class _WalkInCustomerNewState extends State<WalkInCustomerNew> {
                                     child: TextField(
                                         controller: txtDriverMobNo,
                                         keyboardType: TextInputType.number,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.digitsOnly
+                                        ],
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           hintText: "Enter driver Mobile No.",
@@ -601,6 +613,10 @@ class _WalkInCustomerNewState extends State<WalkInCustomerNew> {
                                         keyboardType: TextInputType.text,
                                         textCapitalization:
                                             TextCapitalization.characters,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.deny(
+                                              RegExp(r'[!@#$%^&*(),.?":{}|<>]'))
+                                        ],
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           hintText: "Enter driver License No.",
@@ -731,6 +747,10 @@ class _WalkInCustomerNewState extends State<WalkInCustomerNew> {
                                         textCapitalization:
                                             TextCapitalization.none,
                                         autocorrect: false,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.allow(RegExp(
+                                              r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\\\\.[a-zA-Z]+'))
+                                        ],
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           hintText: "Enter email id",

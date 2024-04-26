@@ -24,6 +24,15 @@ class AWB {
         required this.isselect,
         required this.ff,
         required this.index});
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is AWB &&
+              runtimeType == other.runtimeType &&
+              mawbno == other.mawbno;
+
+  @override
+  int get hashCode => mawbno.hashCode;
 }
 
 class HAWB {
