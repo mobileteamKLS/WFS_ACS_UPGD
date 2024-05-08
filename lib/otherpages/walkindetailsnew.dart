@@ -379,7 +379,9 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
             if(!verifiedMawbList.any((awb) => awb.mawbno == mawbList[0].mawbno)){
               verifiedMawbList.add(mawbList[0]);
             }
-            verifiedHawbList.add(hawbList[0]);
+            if(hawbList.isNotEmpty){
+              verifiedHawbList.add(hawbList[0]);
+            }
             requestIdList.add(rspMsg[0].requestId);
             setState(() {
               isVerified = true;
@@ -1676,16 +1678,25 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                 gradient: LinearGradient(
                   begin: Alignment.topRight,
                   end: Alignment.bottomLeft,
-                  colors: [
-                    selectedMawbNo == _awb.mawbno
-                        ? Color(0xFFfd6607)
-                        : Color(0xFF076cfd),
-                    selectedMawbNo == _awb.mawbno
-                        ? Color(0xFFfd7f07)
-                        : Color(0xFF0785fd),
-                  ],
+                  colors: shipmentTypeSelected != "Direct"
+                      ? [
+                    Color(0xFFfd6607), Color(0xFFfd7f07)
+                          // selectedMawbNo == _awb.mawbno
+                          //     ? Color(0xFFfd6607)
+                          //     : Color(0xFF076cfd),
+                          // selectedMawbNo == _awb.mawbno
+                          //     ? Color(0xFFfd7f07)
+                          //     : Color(0xFF0785fd),
+                        ]
+                      : [Color(0xFFfd6607), Color(0xFFfd7f07)],
                 ),
-              ),
+                  border: Border.all(
+                    color: selectedMawbNo == _awb.mawbno
+                        ? Color(0xFF11249F)
+                        : Colors.transparent,
+                    width: 4
+                  )),
+
               child: Padding(
                 padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
                 child: Align(
@@ -1749,22 +1760,24 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                 });
               }
             },
-            child: Container(
-              height: 40,
-              width: 40,
-              decoration: BoxDecoration(
-                  border: Border.all(
-                    width: 2,
-                    color: Colors.white,
+            child: isVerified
+                ? Container()
+                : Container(
+                    height: 40,
+                    width: 40,
+                    decoration: BoxDecoration(
+                        border: Border.all(
+                          width: 2,
+                          color: Colors.white,
+                        ),
+                        color: Colors.red,
+                        shape: BoxShape.circle),
+                    child: Icon(
+                      Icons.remove,
+                      color: Colors.white,
+                      size: 32,
+                    ),
                   ),
-                  color: Colors.red,
-                  shape: BoxShape.circle),
-              child: Icon(
-                Icons.remove,
-                color: Colors.white,
-                size: 32,
-              ),
-            ),
             // ),
           ),
         ),
@@ -1963,7 +1976,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                                           color: Color(0xFF11249F))),
                                   SizedBox(height: 3),
                                   Text(
-                                    _awb.mawbno,
+                                    _awb.hawbno,
                                     style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.normal,
@@ -2140,7 +2153,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                 setState(() {});
               }
             },
-            child: Container(
+            child:isVerified?SizedBox(): Container(
               height: 40,
               width: 40,
               decoration: BoxDecoration(
@@ -2396,7 +2409,7 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
                 setState(() {});
               }
             },
-            child: Container(
+            child: isVerified?SizedBox():Container(
               height: 40,
               width: 40,
               decoration: BoxDecoration(
@@ -5329,7 +5342,6 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
               //   ],
               // ),
               // SizedBox(height: 10),
-
               SizedBox(
                 width: MediaQuery.of(context).size.width / 1.8,
                 child: Text(
@@ -5672,13 +5684,15 @@ class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
     List<AWB> results = [];
     List<AWB> results2 = [];
     results.addAll(hawbList);
-    results2.addAll(verifiedHawbList);
+    // results2.addAll(verifiedHawbList);
     print("results.length r = " + results.length.toString());
+    print("results2.length = " + results2.length.toString());
     results.where((AWB element) =>
         element.index==mawbList[0].index);
-    results2.where((AWB awb) => awb.mawbno == enteredKeyword).toList();
+    results2=verifiedHawbList.where((AWB awb) => awb.mawbno == enteredKeyword).toList();
     print("results.length = " + results.length.toString());
     print("results2.length = " + results2.length.toString());
+    results2.forEach((awb) => print("mawbno: ${awb.mawbno}"));
     for (AWB i in results) {
       i.mawbno = enteredKeyword;
       i.nop = mawbList[0].nop;

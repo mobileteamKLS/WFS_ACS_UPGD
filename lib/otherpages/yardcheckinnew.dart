@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:luxair/datastructure/vehicletoken.dart';
 import 'package:luxair/otherpages/checkin.dart';
@@ -27,6 +27,7 @@ class YardCheckInNew extends StatefulWidget {
 class _YardCheckInNewState extends State<YardCheckInNew> {
   bool useMobileLayout = false, isLoading = false;
   String dropdownValue = "Select";
+
   // String selectedBaseStation = "Select";
   String selectedBaseStationBranch = "Select";
 
@@ -38,34 +39,41 @@ class _YardCheckInNewState extends State<YardCheckInNew> {
     //     orgBranchName: "Select")
   ];
   String walkIn = "";
-  bool isWalkInEnable = false;
-  int custodianId=0;
+
+  int custodianId = 0;
 
   @override
   void initState() {
     // getTerminal();
     print("####### ${baseStationBranchList.toString()}########");
     print("####### $selectedBaseStation ########");
-    selectedBaseStationID = 0;
-    terminalsListDDL=[];
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      //selectTruckerDialog(context);
-      showDialog(
-          barrierDismissible: false,
-          context: context,
-          builder: (context) {
-            return selectTerminalBox();
-          });
-    });
+    if (!isTerminalAlreadySelected) {
+      selectedBaseStationID = 0;
+      terminalsListDDL = [];
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        //selectTruckerDialog(context);
+        showDialog(
+            barrierDismissible: false,
+            context: context,
+            builder: (context) {
+              return selectTerminalBox();
+            });
+      });
+    }
+
     super.initState();
   }
+
   getCommodity(baseStation) async {
-    commodityList=[];
+    commodityList = [];
     Commodity wt = new Commodity(
-      shcId: 0, specialHandlingCode: 'Select', description: '',);
+      shcId: 0,
+      specialHandlingCode: 'Select',
+      description: '',
+    );
     commodityList.add(wt);
-    selectedBaseForCommId=0;
-    var queryParams = {"BaseStation":baseStation};
+    selectedBaseForCommId = 0;
+    var queryParams = {"BaseStation": baseStation};
     await Global()
         .postData(
       Settings.SERVICES['GetCommodity'],
@@ -78,13 +86,14 @@ class _YardCheckInNewState extends State<YardCheckInNew> {
       var msg = json.decode(response.body)['d'];
       var resp = json.decode(msg).cast<Map<String, dynamic>>();
 
-      commodityList = resp
-          .map<Commodity>(
-              (json) => Commodity.fromJson(json))
-          .toList();
+      commodityList =
+          resp.map<Commodity>((json) => Commodity.fromJson(json)).toList();
 
       Commodity wt = new Commodity(
-        shcId: 0, specialHandlingCode: 'Select', description: '',);
+        shcId: 0,
+        specialHandlingCode: 'Select',
+        description: '',
+      );
       commodityList.add(wt);
       // commodityList.sort((a, b) => a.cityid.compareTo(b.cityid));
       print("length baseStationList = " + commodityList.length.toString());
@@ -163,7 +172,7 @@ class _YardCheckInNewState extends State<YardCheckInNew> {
           orgBranchName: "Select");
       // baseStationBranchList.add(wt);
       baseStationBranchList.sort(
-              (a, b) => a.organizationBranchId.compareTo(b.organizationBranchId));
+          (a, b) => a.organizationBranchId.compareTo(b.organizationBranchId));
 
       print("length baseStationList = " +
           baseStationBranchList.length.toString());
@@ -192,7 +201,7 @@ class _YardCheckInNewState extends State<YardCheckInNew> {
       });
     }
 
-    terminalsListDDL=[];
+    terminalsListDDL = [];
     terminalsListDDL.add(filteredTerminals[0]);
     print(terminalsListDDL.toString());
     print(isWalkInEnable);
@@ -213,209 +222,218 @@ class _YardCheckInNewState extends State<YardCheckInNew> {
       width: MediaQuery.of(context).size.width / 3.8,
       child: StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
-            return AlertDialog(
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 10,
-                  ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width / 1.2,
-                    child: Text(
-                      "Select Base Station",
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF11249F),
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width / 1.2,
-                    child: Wrap(
-                      spacing: 5.0,
-                      children: List<Widget>.generate(
-                        baseStationList.length,
-                            (int index) {
-                          return Padding(
-                            padding: const EdgeInsets.all(2.0),
-                            child: ChoiceChip(
-                              label: Text(' ${baseStationList[index].airportcode}',),
-                              labelStyle: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.white,
-                              ),
-                              padding:const EdgeInsets.symmetric(horizontal: 24.0,vertical: 8.0) ,
-                              backgroundColor: Color(0xFF1D24CA),
-                              selectedColor: Color(0xfff85927),
-                              showCheckmark: false,
-                             materialTapTargetSize: MaterialTapTargetSize.padded,
-                              selected: selectedBaseStationID == baseStationList[index].cityid,
-                              onSelected: (bool selected) {
-                                setState(() async {
-                                  selectedBaseStationID = (selected ? baseStationList[index].cityid : null)!;
-                                  selectedBaseStation=baseStationList[index].airportcode;
-                                  print(selectedBaseStationID);
-                                  print(selectedBaseStation);
-                                  await changeValue();
-                                  setState(() {});
-                                });
-                              },
-                            ),
-                          );
-                        },
-                      ).toList(),
-                    ),
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width / 1.2,
-                    child: Text(
-                      dummyList.length!=0?"Select Terminal":"",
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF11249F),
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-
-
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width / 1.2,
-                    child:Padding(
-                      padding: const EdgeInsets.all(2.0),
-                      child: Wrap(
-                        spacing: 5.0,
-                        children: List<Widget>.generate(
-                          dummyList.length,
-                              (int index) {
-                            return ChoiceChip(
-                              label: Text(' ${dummyList[index].orgBranchName}'),
-                              labelStyle: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.white,
-                              ),
-                              padding:const EdgeInsets.symmetric(horizontal: 24.0,vertical: 8.0) ,
-                              selected: selectedBaseStationBranchID == dummyList[index].organizationBranchId,
-                              showCheckmark: false,
-                              selectedColor: Color(0xfff85927),
-                              backgroundColor: Color(0xFF1D24CA),
-
-                              onSelected: (bool selected) {
-                                setState(() {
-                                  selectedBaseStationBranchID = (selected ? dummyList[index].organizationBranchId : null)!;
-                                  selectedBaseStationBranch = (selected ? dummyList[index].orgBranchName : null)!;
-                                  walkInEnable();
-                                });
-                              },
-                            );
-                          },
-                        ).toList(),
-                      ),
-                    ),
-                  )
-                ],
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 10,
               ),
-              // },),
-
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0, bottom: 16.0),
-                  child: ElevatedButton(
-                    //textColor: Colors.black,
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      elevation: 4.0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0)), //
-                      padding: const EdgeInsets.all(0.0),
-                    ),
-                    child: Container(
-                      height: 50,
-                      width: 150,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: Colors.white,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                        child: Align(
-                          alignment: Alignment.center,
-                          child: Text(
-                            'Clear',
-                            style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.normal,
-                                color: Color(0xFF11249F)),
-                          ),
-                        ),
-                      ),
-                    ),
+              SizedBox(
+                width: MediaQuery.of(context).size.width / 1.2,
+                child: Text(
+                  "Select Base Station",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF11249F),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0, bottom: 16.0),
-                  child: ElevatedButton(
-                    //textColor: Colors.black,
-                    onPressed: () {
-                      // setState(() {});
-                      // if (selectedBaseStationID == 0 || selectedBaseStationBranchID == 0) {
-                      //   print("$selectedBaseStationID ======= $selectedBaseStationBranchID");
-                      //   return;
-                      // }
-                      Navigator.of(context).pop();
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              SizedBox(
+                width: MediaQuery.of(context).size.width / 1.2,
+                child: Wrap(
+                  spacing: 5.0,
+                  children: List<Widget>.generate(
+                    baseStationList.length,
+                    (int index) {
+                      return Padding(
+                        padding: const EdgeInsets.all(2.0),
+                        child: ChoiceChip(
+                          label: Text(
+                            ' ${baseStationList[index].airportcode}',
+                          ),
+                          labelStyle: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0, vertical: 8.0),
+                          backgroundColor: Color(0xFF1D24CA),
+                          selectedColor: Color(0xfff85927),
+                          showCheckmark: false,
+                          materialTapTargetSize: MaterialTapTargetSize.padded,
+                          selected: selectedBaseStationID ==
+                              baseStationList[index].cityid,
+                          onSelected: (bool selected) {
+                            setState(() async {
+                              selectedBaseStationID = (selected
+                                  ? baseStationList[index].cityid
+                                  : null)!;
+                              selectedBaseStation =
+                                  baseStationList[index].airportcode;
+                              print(selectedBaseStationID);
+                              print(selectedBaseStation);
+                              await changeValue();
+                              setState(() {});
+                            });
+                          },
+                        ),
+                      );
                     },
-                    style: ElevatedButton.styleFrom(
-                      elevation: 4.0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0)), //
-                      padding: const EdgeInsets.all(0.0),
-                    ),
-                    child: Container(
-                      height: 50,
-                      width: 150,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        gradient: LinearGradient(
-                          begin: Alignment.topRight,
-                          end: Alignment.bottomLeft,
-                          colors: [
-                            Color(0xFF1220BC),
-                            Color(0xFF3540E8),
-                          ],
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                        child: Align(
-                          alignment: Alignment.center,
-                          child: Text(
-                            'OK',
-                            style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.white),
+                  ).toList(),
+                ),
+              ),
+              SizedBox(
+                height: 20,
+              ),
+              SizedBox(
+                width: MediaQuery.of(context).size.width / 1.2,
+                child: Text(
+                  dummyList.length != 0 ? "Select Terminal" : "",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF11249F),
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              SizedBox(
+                width: MediaQuery.of(context).size.width / 1.2,
+                child: Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: Wrap(
+                    spacing: 5.0,
+                    children: List<Widget>.generate(
+                      dummyList.length,
+                      (int index) {
+                        return ChoiceChip(
+                          label: Text(' ${dummyList[index].orgBranchName}'),
+                          labelStyle: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white,
                           ),
-                        ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0, vertical: 8.0),
+                          selected: selectedBaseStationBranchID ==
+                              dummyList[index].organizationBranchId,
+                          showCheckmark: false,
+                          selectedColor: Color(0xfff85927),
+                          backgroundColor: Color(0xFF1D24CA),
+                          onSelected: (bool selected) {
+                            setState(() {
+                              selectedBaseStationBranchID = (selected
+                                  ? dummyList[index].organizationBranchId
+                                  : null)!;
+                              selectedBaseStationBranch = (selected
+                                  ? dummyList[index].orgBranchName
+                                  : null)!;
+                              walkInEnable();
+                            });
+                          },
+                        );
+                      },
+                    ).toList(),
+                  ),
+                ),
+              )
+            ],
+          ),
+          // },),
+
+          actions: [
+            // Padding(
+            //   padding: const EdgeInsets.only(right: 8.0, bottom: 16.0),
+            //   child: ElevatedButton(
+            //     //textColor: Colors.black,
+            //     onPressed: () {},
+            //     style: ElevatedButton.styleFrom(
+            //       elevation: 4.0,
+            //       shape: RoundedRectangleBorder(
+            //           borderRadius: BorderRadius.circular(10.0)), //
+            //       padding: const EdgeInsets.all(0.0),
+            //     ),
+            //     child: Container(
+            //       height: 50,
+            //       width: 150,
+            //       decoration: BoxDecoration(
+            //         borderRadius: BorderRadius.circular(10),
+            //         color: Colors.white,
+            //       ),
+            //       child: Padding(
+            //         padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+            //         child: Align(
+            //           alignment: Alignment.center,
+            //           child: Text(
+            //             'Clear',
+            //             style: TextStyle(
+            //                 fontSize: 20,
+            //                 fontWeight: FontWeight.normal,
+            //                 color: Color(0xFF11249F)),
+            //           ),
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0, bottom: 16.0),
+              child: ElevatedButton(
+                //textColor: Colors.black,
+                onPressed: () {
+                  setState(() {
+                    isTerminalAlreadySelected = true;
+                  });
+
+                  Navigator.of(context).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  elevation: 4.0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0)), //
+                  padding: const EdgeInsets.all(0.0),
+                ),
+                child: Container(
+                  height: 50,
+                  width: 150,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    gradient: LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [
+                        Color(0xFF1220BC),
+                        Color(0xFF3540E8),
+                      ],
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Text(
+                        'OK',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white),
                       ),
                     ),
                   ),
                 ),
-              ],
-            );
-          }),
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 
@@ -477,7 +495,7 @@ class _YardCheckInNewState extends State<YardCheckInNew> {
                         children: [
                           Padding(
                             padding:
-                            const EdgeInsets.only(left: 20.0, top: 30.0),
+                                const EdgeInsets.only(left: 20.0, top: 30.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.start,
                               crossAxisAlignment: CrossAxisAlignment.center,
@@ -492,7 +510,7 @@ class _YardCheckInNewState extends State<YardCheckInNew> {
                                       size: useMobileLayout
                                           ? 40
                                           : MediaQuery.of(context).size.width /
-                                          18, //56,
+                                              18, //56,
                                       color: Colors.white,
                                     ),
                                   ),
@@ -504,7 +522,7 @@ class _YardCheckInNewState extends State<YardCheckInNew> {
                                       fontSize: kIsWeb
                                           ? 48
                                           : MediaQuery.of(context).size.width /
-                                          18, //48,
+                                              18, //48,
                                       fontWeight: FontWeight.normal,
                                       color: Colors.white),
                                 ),
@@ -981,9 +999,9 @@ class RequestTypeMenuBlock extends StatelessWidget {
                           fontSize: kIsWeb
                               ? 30
                               : isMobile
-                              ? MediaQuery.of(context).size.width / 22
-                              : MediaQuery.of(context).size.width /
-                              25, //28,
+                                  ? MediaQuery.of(context).size.width / 22
+                                  : MediaQuery.of(context).size.width /
+                                      25, //28,
                           fontWeight: FontWeight.normal,
                           color: Colors.white),
                     ),
@@ -993,9 +1011,9 @@ class RequestTypeMenuBlock extends StatelessWidget {
                           fontSize: kIsWeb
                               ? 30
                               : isMobile
-                              ? MediaQuery.of(context).size.width / 20
-                              : MediaQuery.of(context).size.width /
-                              25, //28,
+                                  ? MediaQuery.of(context).size.width / 20
+                                  : MediaQuery.of(context).size.width /
+                                      25, //28,
                           fontWeight: FontWeight.bold,
                           color: Colors.white),
                     ),
@@ -1023,33 +1041,33 @@ class RequestTypeMenuBlock extends StatelessWidget {
                   ? MediaQuery.of(context).size.height / 8
                   : MediaQuery.of(context).size.height / 12, //108.0,
               decoration: BoxDecoration(
-                // border: Border.all(
-                //   width: 2,
-                //   color: Colors.white,
-                // ),
-                // color: Color(0xFF008000),
+                  // border: Border.all(
+                  //   width: 2,
+                  //   color: Colors.white,
+                  // ),
+                  // color: Color(0xFF008000),
                   color: Colors.white,
                   //Colors.blue.withOpacity(0.5),
                   shape: BoxShape.circle),
               child:
 
-              // Image(
-              //   // height: 50.0,
-              //   // width: 50.0,
-              //   // fit: BoxFit.scaleDown,
-              //   image: AssetImage(
-              //       'assets/icons/qr-code-3.png'),
-              // )
+                  // Image(
+                  //   // height: 50.0,
+                  //   // width: 50.0,
+                  //   // fit: BoxFit.scaleDown,
+                  //   image: AssetImage(
+                  //       'assets/icons/qr-code-3.png'),
+                  // )
 
-              Icon(lblicon, // Icons.qr_code,
-                  size: kIsWeb
-                      ? 72
-                      : isMobile
-                      ? MediaQuery.of(context).size.width / 9
-                      : 72, //72,
-                  color: color1
-                //  Color(0xFFdd5e89), //Colors.blue.shade700, //Colors.white,
-              ),
+                  Icon(lblicon, // Icons.qr_code,
+                      size: kIsWeb
+                          ? 72
+                          : isMobile
+                              ? MediaQuery.of(context).size.width / 9
+                              : 72, //72,
+                      color: color1
+                      //  Color(0xFFdd5e89), //Colors.blue.shade700, //Colors.white,
+                      ),
             ),
           )
         ],

@@ -90,20 +90,34 @@ class _WalkInCustomerNewState extends State<WalkInCustomerNew> {
     super.dispose();
   }
 
+
+  String getTokenFromApiResponse(apiResponse) {
+    final tokenRegExp = RegExp(r"Token No\. (\w+)");
+    final match = tokenRegExp.firstMatch(apiResponse);
+    if (match != null) {
+      return match.group(1)!;
+    }
+    return "";
+  }
+
   responseAlert(errorCode) async {
     var userSelection = await showDialog(
       context: context,
-      builder: (BuildContext context) => CustomAlertMessageDialogNew(
+      builder: (BuildContext context) => CustomAlertMessageDialogNewV2(
           description: errorCode,
+          highlightedText: getTokenFromApiResponse(errorCode),
           buttonText: "Okay",
           imagepath: 'assets/images/successchk.gif',
           isMobile: useMobileLayout),
     );
     print("userSelection ==" + userSelection.toString());
     if (userSelection) {
-      Navigator.of(context).pushReplacement(MaterialPageRoute(
-        builder: (context) => YardCheckInNew(),
-      ));
+      Future.delayed(Duration(seconds: 2), () {
+        Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (context) => YardCheckInNew(),
+        ));
+      });
+
     }
   }
 
