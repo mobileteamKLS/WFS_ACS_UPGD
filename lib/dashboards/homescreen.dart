@@ -12,6 +12,7 @@ import 'package:luxair/widgets/headers.dart';
 
 import '../constants.dart';
 import '../global.dart';
+import '../otherpages/yardcheckinnew.dart';
 import 'leaderboard.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 // import 'package:ani'
@@ -376,7 +377,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   "Easy",
                                   "Yard",
                                   "Check-In",
-                                  YardCheckIn(),
+                                  YardCheckInNew(),
                                   useMobileLayout),
                             ),
 

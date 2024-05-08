@@ -1,35 +1,39 @@
 import 'dart:convert';
-
 import 'package:luxair/dashboards/homescreen.dart';
 import 'package:luxair/datastructure/slotbooking.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:luxair/datastructure/vehicletoken.dart';
+import 'package:luxair/otherpages/walkinnew.dart';
 import 'package:luxair/widgets/customdialogue.dart';
 import 'package:luxair/widgets/headerclipper.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:toggle_switch/toggle_switch.dart';
 
 import '../constants.dart';
 import '../datastructure/airwaybill.dart';
 import '../global.dart';
+import '../widgets/headers.dart';
 
-class WalkInAwbDetails extends StatefulWidget {
-  final String modeSelected;
-  final List<WalkinMain> walkinTable;
-  WalkInAwbDetails(
-      {Key? key, required this.modeSelected, required this.walkinTable})
-      : super(key: key);
+class WalkInAwbDetailsNew extends StatefulWidget {
+  //
+  // final List<WalkinMain> walkinTable;
+  WalkInAwbDetailsNew({
+    Key? key,
+  }) : super(key: key);
 
   @override
-  State<WalkInAwbDetails> createState() => _WalkInAwbDetailsState();
+  State<WalkInAwbDetailsNew> createState() => _WalkInAwbDetailsNewState();
 }
 
-
-
-class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
+class _WalkInAwbDetailsNewState extends State<WalkInAwbDetailsNew> {
+  int modeSelected = 0;
   String selectedMawbNo = "", selectedOrigin = "", selectedPrefix = "";
-  bool useMobileLayout = false, isLoading = false, isSavingData = false;
+  bool useMobileLayout = false,
+      isLoading = false,
+      isSavingData = false,
+      isVerified = false;
   TextEditingController txtOriginM = new TextEditingController();
   TextEditingController txtPrefixM = new TextEditingController();
   TextEditingController txtMawbnoM = new TextEditingController();
@@ -49,15 +53,40 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
 
   List<AWB> hawbListToBind = [];
   List<AWB> mawbList = [];
+
+  // List<AWB> mawbListPickUP = [];
   List<AWB> hawbList = [];
+  List<AWB> verifiedMawbList = [];
+  List<AWB> verifiedHawbList = [];
+  List<AWB> filteredHawbList = [];
 
   List<MAWB> mawbListSave = [];
   List<MAWBDropoff> mawbDropOffListSave = [];
   List<HAWB> hawbListSave = [];
+  List<String> requestIdList=[];
 
   String shipmentTypeSelected = "Select";
   String commoditySelected = "Select";
+  int commoditySelectedID = 0;
   String errMsgText = "";
+  String modeName = "Drop-off";
+  Map<String, String> rspErrorCodes = {
+    "WH":
+        "The HAWB No does not exists. Kindly amend the necessary changes and save again.",
+    "NA":
+        "This AWB or part of this AWB is already delivered. Please try again later.",
+    "NP": "All available PCs have been delivered.",
+    "NF": "No record found for this AWB.",
+    "LH":
+        "The partial delivery of MAWB No. is already completed outside ACS. In order to proceed this AWB enter HAWB’s details.",
+    "LM":
+        "The HAWB No. partially delivered at MAWB level outside ACS. In order to proceed this AWB change shipment type from CONSOL to DIRECT.\N Do you want to proceed to change shipment type to DIRECT ? ",
+    "PF":
+        "You cannot book slot till payment is completed for the selected shipment.",
+    "BF":
+        "You cannot book slot till breakdown is completed for the selected shipment.",
+    "WL": "The location you've entered does not match the freight location.",
+  };
 
   static Future<List<AirlinesPrefix>> getSuggestionsPrefix(String query) async {
     List<AirlinesPrefix> matches = [];
@@ -73,6 +102,383 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
     matches.retainWhere(
         (Airport s) => s.CityCode.toLowerCase().contains(query.toLowerCase()));
     return matches;
+  }
+
+  getPrefix() async {
+    var queryParams = {'GHABranchId': selectedBaseStationBranchID.toString()};
+    await Global()
+        .postData(
+      Settings.SERVICES['GetAirlinePrefixList'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+
+      var msg = json.decode(response.body)['d'];
+      var resp = json.decode(msg).cast<Map<String, dynamic>>();
+
+      airlinesPrefixList = resp
+          .map<AirlinesPrefix>((json) => AirlinesPrefix.fromJson(json))
+          .toList();
+
+      print("length baseStationList = " + airlinesPrefixList.length.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
+  }
+
+  getAirport() async {
+    var queryParams = {};
+    await Global()
+        .postData(
+      Settings.SERVICES['GetAiportsList'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+
+      var msg = json.decode(response.body)['d'];
+      var resp = json.decode(msg).cast<Map<String, dynamic>>();
+
+      airportList =
+          resp.map<Airport>((json) => Airport.fromJson(json)).toList();
+
+      print("length baseStationList = " + airportList.length.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
+  }
+
+  deleteShipment(requestId) async {
+    var queryParams = {"WFSRequestId": requestId};
+    await Global()
+        .postData(
+      Settings.SERVICES['DeleteShipment'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+      var msg = json.decode(response.body)['d'];
+      var resp = json.decode(msg).cast<Map<String, dynamic>>();
+      print("length baseStationList = " + airportList.length.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      print(onError);
+    });
+  }
+
+  verifyAirline() async {
+    List<String> mawbPrefixes = [];
+    String mode = "";
+    errMsgText = "";
+    String responseTextUpdated = "";
+    bool isValid = false;
+
+    //Export or Drop off
+    if (modeSelected == 0) {
+      mode = "E";
+      for (AWB u in mawbList) {
+        mawbPrefixes.add(u.prefix);
+      }
+    } else {
+      mode = "I";
+      for (AWB u in verifiedMawbList) {
+        mawbPrefixes.add(u.prefix);
+      }
+    }
+    var queryParams = {
+      "Mode": mode,
+      "TerminalId": selectedBaseStationBranchID.toString(),
+      "MAWBPrefix": mawbPrefixes
+    };
+    await Global()
+        .postData(
+      Settings.SERVICES['VerifyAirline'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+
+      if (json.decode(response.body)['d'] != null) {
+        var msg = json.decode(response.body)['d'];
+        var resp = json.decode(msg).cast<Map<String, dynamic>>();
+
+        List<VerificationMsg> rspMsg = [];
+        rspMsg = resp
+            .map<VerificationMsg>((json) => VerificationMsg.fromJson(json))
+            .toList();
+        if (rspMsg.isNotEmpty) if (rspMsg[0].Status == "S") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => WalkInCustomerNew(
+                      mawbList: mawbList,
+                      mode: modeSelected,
+                    requestIdList:requestIdList,
+                    )),
+          );
+        } else {
+          responseTextUpdated = rspMsg[0].StrMessage.toString();
+          responseAlert(rspMsg[0].StrMessage.toString());
+        }
+      }
+      //
+      // airportList =
+      //     resp.map<Airport>((json) => Airport.fromJson(json)).toList();
+      //
+      // print("length baseStationList = " + airportList.length.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
+  }
+
+  responseAlert(errorCode) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => CustomAlertMessageDialogNew(
+          description: errorCode,
+          buttonText: "Okay",
+          imagepath: 'assets/images/warn.gif',
+          isMobile: useMobileLayout),
+    );
+  }
+
+  verifyAWBDetails() async {
+    String masterList = "",
+        houseList = "",
+        mawbPickUpTableString = "",
+        shiptype = "",
+        natureofgoods = "",
+        finalHawbTableString = "",
+        hawbTableString = "";
+    int mawbIndex = 0;
+
+    for (AWB u in mawbList) {
+      String a = "{\"MAWBId\":\"${u.index}\"," +
+          "\"shipmentType\":\"${u.shiptype.toLowerCase()}\"," +
+          "\"origin\":\"${u.origin}\"," +
+          "\"destination\":\"$selectedBaseStation\"," +
+          "\"prefix\":\"${u.prefix}\"," +
+          "\"mawbNo\":\"${u.mawbno}\"," +
+          "\"NoP\":\"${u.nop}\"," +
+          "\"GrWt\":\"${u.grwt}\"," +
+          "\"NatureOfGoods\":\"goods\"," +
+          "\"freightForwarder\":\"ff\"," +
+          "\"CommodityIds\":\"${u.natureofgoods}\"," +
+          "\"GHABranchID\":\"$selectedBaseStationBranchID\" }";
+      mawbIndex = u.index;
+      shiptype = u.shiptype;
+      natureofgoods = u.natureofgoods;
+      mawbPickUpTableString = mawbPickUpTableString + a;
+    }
+
+    if (hawbList.length > 0) {
+      int iHawb = 0;
+
+      for (AWB u in hawbList) {
+        String a = "{\"MAWBId\":\"$mawbIndex\"," +
+            "\"HAWBId\":\"${u.index}\"," +
+            "\"shipmentType\":\"$shiptype\"," +
+            "\"origin\":\"${u.origin}\"," +
+            "\"destination\":\"$selectedBaseStation\"," +
+            "\"prefix\":\"${u.prefix}\"," +
+            "\"mawbNo\":\"${u.mawbno}\"," +
+            "\"hawbNo\":\"${u.hawbno}\"," +
+            "\"NoP\":\"${u.nop}\"," +
+            "\"GrWt\":\"${u.grwt}\"," +
+            "\"NatureOfGoods\":\"goods\"," +
+            "\"freightForwarder\":\"ff\"," +
+            "\"CommodityIds\":\"$natureofgoods\"," +
+            "\"GHABranchID\":\"$selectedBaseStationBranchID\" }";
+        if (iHawb == 0)
+          hawbTableString = hawbTableString + a;
+        else
+          hawbTableString = hawbTableString + "," + a;
+
+        iHawb++;
+      }
+    }
+
+    masterList = "[" + mawbPickUpTableString + "]";
+    houseList = "[" + hawbTableString + "]";
+    var queryParams = {
+      "MAWBData": json.decode(masterList),
+      "HAWBData": json.decode(houseList)
+    };
+    await Global()
+        .postData(
+      Settings.SERVICES['VerifyImportShipment'],
+      queryParams,
+    )
+        .then((response) {
+      print("data received ");
+      print(json.decode(response.body)['d']);
+
+      if (json.decode(response.body)['d'] != null) {
+        var msg = json.decode(response.body)['d'];
+        var resp = json.decode(msg).cast<Map<String, dynamic>>();
+        print(resp);
+        List<VerificationResponseMsg> rspMsg = [];
+        rspMsg = resp
+            .map<VerificationResponseMsg>(
+                (json) => VerificationResponseMsg.fromJson(json))
+            .toList();
+        if (rspMsg.isNotEmpty) {
+          if (rspMsg[0].errorCode == "WH") {
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
+            deleteShipment(rspMsg[0].requestId);
+          } else if (rspMsg[0].errorCode == "NA") {
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
+            deleteShipment(rspMsg[0].requestId);
+          } else if (rspMsg[0].errorCode == "NP") {
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
+            deleteShipment(rspMsg[0].requestId);
+          } else if (rspMsg[0].errorCode == "NF") {
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
+            deleteShipment(rspMsg[0].requestId);
+          } else if (rspMsg[0].errorCode == "LH") {
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
+            deleteShipment(rspMsg[0].requestId);
+          } else if (rspMsg[0].errorCode == "LM") {
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
+            deleteShipment(rspMsg[0].requestId);
+          } else if (rspMsg[0].errorCode == "PF") {
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
+            deleteShipment(rspMsg[0].requestId);
+          } else if (rspMsg[0].errorCode == "BF") {
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
+            deleteShipment(rspMsg[0].requestId);
+          } else if (rspMsg[0].errorCode == "WL") {
+            responseAlert(rspErrorCodes[rspMsg[0].errorCode]!);
+            deleteShipment(rspMsg[0].requestId);
+          } else {
+            if(!verifiedMawbList.any((awb) => awb.mawbno == mawbList[0].mawbno)){
+              verifiedMawbList.add(mawbList[0]);
+            }
+            if(hawbList.isNotEmpty){
+              verifiedHawbList.add(hawbList[0]);
+            }
+            requestIdList.add(rspMsg[0].requestId);
+            setState(() {
+              isVerified = true;
+            });
+
+            print(isVerified);
+          }
+        }
+      }
+      //
+      // airportList =
+      //     resp.map<Airport>((json) => Airport.fromJson(json)).toList();
+      //
+      // print("length baseStationList = " + airportList.length.toString());
+      setState(() {
+        isLoading = false;
+      });
+    }).catchError((onError) {
+      // setState(() {
+      //   isLoading = false;
+      // });
+      print(onError);
+    });
+  }
+
+  addMawb() async {
+    txtOriginM.text = "";
+    txtPrefixM.text = "";
+    txtOriginM.text = "";
+    txtMawbnoM.text = "";
+    txthawbnoM.text = "";
+    txtpickupnopM.text = "";
+    txtgrwtnopM.text = "";
+    txtnatureofgoodsM.text = "";
+    txtff.text = "";
+
+    shipmentTypeSelected = "Select";
+    commoditySelected = "Select";
+    if (modeSelected == 0) {
+      var masterAdded = await showDialog(
+          barrierDismissible: false,
+          context: context,
+          builder: (context) {
+            return buildMawbPopUpIpad();
+          });
+
+      print("masterAdded");
+      print(masterAdded);
+    } else {
+      var masterAdded = await showDialog(
+          barrierDismissible: false,
+          context: context,
+          builder: (context) {
+            return buildMawbPopUpIpad();
+          });
+
+      print("masterAdded");
+      print(masterAdded);
+
+      if (masterAdded != null) if (masterAdded == "y" &&
+          shipmentTypeSelected != "Direct") {
+        var userSelection = await showDialog(
+          context: context,
+          builder: (BuildContext context) => CustomConfirmDialog(
+              title: "ADD HOUSE ?",
+              description:
+                  "Would you like Proceed to add House in this Master ",
+              buttonText: "Okay",
+              imagepath: 'assets/images/question.gif',
+              isMobile: useMobileLayout),
+        );
+        print("userSelection ==" + userSelection.toString());
+
+        if (userSelection != null) if (userSelection == true) {
+          txtMawbnoH.text = selectedMawbNo;
+          txtPrefixH.text = selectedPrefix;
+          txtOriginH.text = selectedOrigin;
+
+          txthawbnoH.text = "";
+          txtpickupnopH.text = "";
+          txtgrwtnopH.text = "";
+          txtnatureofgoodsH.text = "";
+
+          txtff.text = "";
+
+          shipmentTypeSelected = "Select";
+          commoditySelected = "Select";
+
+          showDialog(
+              barrierDismissible: false,
+              context: context,
+              builder: (context) {
+                return buildHawbPopUpIpad();
+              });
+        }
+      }
+    }
   }
 
   // List<AWB> mawbList = [
@@ -156,6 +562,11 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
   void initState() {
     hawbListToBind = hawbList;
     super.initState();
+    getPrefix();
+    getAirport();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      addMawb();
+    });
   }
 
   @override
@@ -163,52 +574,38 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
     var smallestDimension = MediaQuery.of(context).size.shortestSide;
     useMobileLayout = smallestDimension < 600;
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          if (isSavingData) return;
-          // showSuccessMessage();
-          var submitCheckin = await saveData();
-          if (submitCheckin == true) {
-            // print("saved successfully");
-
-            var dlgstatus = await showDialog(
-              context: context,
-              builder: (BuildContext context) => CustomDialog(
-                title: "VT Generated",
-                description: errMsgText,
-                buttonText: "Okay",
-                imagepath: 'assets/images/successchk.gif',
-                isMobile: useMobileLayout,
-              ),
-            );
-            if (dlgstatus == true) {
-              Navigator.of(context).pushReplacement(MaterialPageRoute(
-                  builder: (BuildContext context) => HomeScreen()));
-            }
-          }
-          //  else {
-          //   print("error while save");
-          //   showDialog(
-          //     context: context,
-          //     builder: (BuildContext context) => customAlertMessageDialog(
-          //         title: errMsgText == "" ? "Error Occured" : "Dock-In Failed",
-          //         description: errMsgText == ""
-          //             ? "Error occured while performing Dock-In, Please try again after some time"
-          //             : errMsgText,
-          //         buttonText: "Okay",
-          //         imagepath: 'assets/images/warn.gif',
-          //         isMobile: useMobileLayout),
-          //   );
-          // }
-        },
-        label: const Text('Submit',
-            style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.normal,
-                color: Colors.white)),
-        icon: const Icon(Icons.save),
-        backgroundColor: Color(0xFF11249F),
-      ),
+      floatingActionButton: (mawbList.length != 0)
+          ? modeSelected == 0 || isVerified
+              ? FloatingActionButton.extended(
+                  onPressed: () async {
+                    verifyAirline();
+                  },
+                  label: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                    child: const Text('Next',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white)),
+                  ),
+                  backgroundColor: Color(0xFF11249F),
+                )
+              : FloatingActionButton.extended(
+                  onPressed: () async {
+                    verifyAWBDetails();
+                  },
+                  label: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                    child: const Text('Verify',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white)),
+                  ),
+                  backgroundColor: Color(0xFF11249F),
+                )
+          : SizedBox(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       body: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,14 +730,107 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
             //   ),
             // ),
 
-            HeaderClipperWaveMultiline(
-                color1: Color(0xFF3383CD),
-                color2: Color(0xFF11249F),
-                headerText: "Enter AWB Details",
-                modeText: widget.modeSelected.toString(),
-                isMobile: useMobileLayout,
-                isWeb: kIsWeb),
+            // HeaderClipperWaveMultilineNew(
+            //     color1: Color(0xFF3383CD),
+            //     color2: Color(0xFF11249F),
+            //     headerText: "Enter AWB Details",
+            //     modeText: modeSelected ,
+            //     isMobile: useMobileLayout,
+            //     isWeb: kIsWeb),
+            ClipPath(
+              //upper clippath with less height
+              clipper: WaveClipper(), //set our custom wave clipper.
+              child: Container(
+                padding: EdgeInsets.only(bottom: 50),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomLeft,
+                    colors: [
+                      Color(0xFF3383CD), //  Color(0xFF3383CD),
+                      Color(0xFF11249F), //   Color(0xFF11249F),
+                    ],
+                  ),
+                ),
+                height: MediaQuery.of(context).size.height / 5,
+                //180,
+                alignment: Alignment.center,
 
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 20.0, top: 30.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: Center(
+                                child: Icon(
+                                  Icons.chevron_left,
+                                  size: useMobileLayout
+                                      ? 40
+                                      : kIsWeb
+                                          ? 40
+                                          : MediaQuery.of(context).size.width /
+                                              18, //56,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 20),
+                            Text(
+                              "Enter AWB Details", // "Walk-in Details ",
+                              style: TextStyle(
+                                  fontSize: kIsWeb
+                                      ? 48
+                                      : MediaQuery.of(context).size.width /
+                                          18, //48,
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // SizedBox(
+                          //   width: isWeb ?  MediaQuery.of(context).size.width / 10 :  MediaQuery.of(context).size.width / 7 ,
+                          //   child: Text(
+                          //     " ", // "Walk-in Details ",
+                          //     style: TextStyle(
+                          //         fontSize:isWeb ? 48:
+                          //             MediaQuery.of(context).size.width / 18, //48,
+                          //         fontWeight: FontWeight.normal,
+                          //         color: Colors.white),
+                          //   ),
+                          // ),
+                          SizedBox(width: 40),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 48.0),
+                            child: Text(
+                              " Mode : $modeName ",
+                              style: TextStyle(
+                                  fontSize: kIsWeb
+                                      ? 32
+                                      : MediaQuery.of(context).size.width /
+                                          22, //48,
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ]),
+              ),
+            ),
             // useMobileLayout
             //     ? Padding(
             //         padding: const EdgeInsets.only(
@@ -455,7 +945,129 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
             //         ),
             //       )
             //     :
+            if (!useMobileLayout)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(
+                        left: 42.0, top: 8.0, bottom: 16.0),
+                    child: ToggleSwitch(
+                      minWidth: useMobileLayout
+                          ? MediaQuery.of(context).size.width / 3
+                          : MediaQuery.of(context).size.width / 4.5,
+                      //  width: useMobileLayout ?  MediaQuery.of(context).size.width / 1.4: MediaQuery.of(context).size.width / 2.2,
+                      minHeight: 65.0,
+                      initialLabelIndex: modeSelected,
+                      cornerRadius: 20.0,
+                      activeFgColor: Colors.white,
+                      inactiveBgColor: Colors.grey,
+                      inactiveFgColor: Colors.white,
+                      totalSwitches: 2,
+                      customTextStyles: [
+                        TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.white,
+                        ),
+                        TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.white,
+                        )
+                      ],
+                      labels: ['Drop-off ', ' Pick-up'],
+                      icons: [
+                        Icons.south,
+                        Icons.north,
+                      ],
+                      iconSize: 22.0,
+                      activeBgColors: [
+                        // [Colors.blueAccent, Colors.blue],
+                        // [Colors.blueAccent, Colors.blue],
 
+                        [Color(0xFF1220BC), Color(0xFF3540E8)],
+                        [Color(0xFF1220BC), Color(0xFF3540E8)],
+                      ],
+                      // animate: true,
+                      // with just animate set to true, default curve = Curves.easeIn
+                      curve: Curves.bounceInOut,
+                      // animate must be set to true when using custom curve
+                      onToggle: (index) {
+                        print('switched to: $index');
+
+                        setState(() async {
+                          //selectedText = "";
+                          if ((mawbList.length == 0)) {
+                            modeSelected = index!;
+                            addMawb();
+                          }
+                          print("$modeSelected====");
+                          if (modeSelected == 0) {
+                            setState(() {
+                              modeName = "Drop-off";
+                            });
+
+                            print("$modeName");
+                          } else {
+                            setState(() {
+                              modeName = "Pick-up";
+                            });
+
+                            print("$modeName");
+                          }
+                        });
+                      },
+                      changeOnTap: mawbList.length == 0 ? true : false,
+                    ),
+                  ),
+                  (mawbList.length == 0 || (!isVerified && modeSelected != 0))
+                      ? SizedBox()
+                      : Container(
+                          padding: EdgeInsets.all(8.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              addMawb();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              elevation: 4.0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0)), //
+                              padding: const EdgeInsets.all(0.0),
+                            ),
+                            child: Container(
+                              height: 50,
+                              width: 150,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topRight,
+                                  end: Alignment.bottomLeft,
+                                  colors: [
+                                    Color(0xFF1220BC),
+                                    Color(0xFF3540E8),
+                                  ],
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                    top: 8.0, bottom: 8.0),
+                                child: Align(
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'Add MAWB',
+                                    style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.normal,
+                                        color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                ],
+              ),
             if (isSavingData)
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -496,124 +1108,123 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 10.0),
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          txtOriginM.text = "";
-                          txtPrefixM.text = "";
-                          txtOriginM.text = "";
-                          txtMawbnoM.text = "";
-                          txthawbnoM.text = "";
-                          txtpickupnopM.text = "";
-                          txtgrwtnopM.text = "";
-                          txtnatureofgoodsM.text = "";
-                          txtff.text = "";
-
-                          shipmentTypeSelected = "Select";
-                          commoditySelected = "Select";
-                          if (widget.modeSelected
-                              .toLowerCase()
-                              .contains("drop")) {
-                            var masterAdded = await showDialog(
-                                barrierDismissible: false,
-                                context: context,
-                                builder: (context) {
-                                  return buildMawbPopUpIpad();
-                                });
-
-                            print("masterAdded");
-                            print(masterAdded);
-                          } else {
-                            var masterAdded = await showDialog(
-                                barrierDismissible: false,
-                                context: context,
-                                builder: (context) {
-                                  return buildMawbPopUpIpad();
-                                });
-
-                            print("masterAdded");
-                            print(masterAdded);
-
-                            if (masterAdded != null) if (masterAdded == "y") {
-                              var userSelection = await showDialog(
-                                context: context,
-                                builder: (BuildContext context) =>
-                                    CustomConfirmDialog(
-                                        title: "ADD HOUSE ?",
-                                        description:
-                                            "Would you like Proceed to add House in this Master ",
-                                        buttonText: "Okay",
-                                        imagepath: 'assets/images/question.gif',
-                                        isMobile: useMobileLayout),
-                              );
-                              print("userSelection ==" +
-                                  userSelection.toString());
-
-                              if (userSelection != null) if (userSelection ==
-                                  true) {
-                                txtMawbnoH.text = selectedMawbNo;
-                                txtPrefixH.text = selectedPrefix;
-                                txtOriginH.text = selectedOrigin;
-
-                                txthawbnoH.text = "";
-                                txtpickupnopH.text = "";
-                                txtgrwtnopH.text = "";
-                                txtnatureofgoodsH.text = "";
-
-                                txtff.text = "";
-
-                                shipmentTypeSelected = "Select";
-                                commoditySelected = "Select";
-
-                                showDialog(
-                                    barrierDismissible: false,
-                                    context: context,
-                                    builder: (context) {
-                                      return buildHawbPopUpIpad();
-                                    });
-                              }
-                            }
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          elevation: 4.0,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10.0)), //
-                          padding: const EdgeInsets.all(0.0),
-                        ),
-                        child: Container(
-                          height: 50,
-                          width: 150,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            gradient: LinearGradient(
-                              begin: Alignment.topRight,
-                              end: Alignment.bottomLeft,
-                              colors: [
-                                Color(0xFF1220BC),
-                                Color(0xFF3540E8),
-                              ],
-                            ),
-                          ),
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                            child: Align(
-                              alignment: Alignment.center,
-                              child: Text(
-                                'Add MAWB',
-                                style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.normal,
-                                    color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        ),
-                        //Text('CONTAINED BUTTON'),
-                      ),
-                    ),
+                    // Padding(
+                    //   padding: const EdgeInsets.only(left: 10.0),
+                    //   child: ElevatedButton(
+                    //     onPressed: () async {
+                    //       txtOriginM.text = "";
+                    //       txtPrefixM.text = "";
+                    //       txtOriginM.text = "";
+                    //       txtMawbnoM.text = "";
+                    //       txthawbnoM.text = "";
+                    //       txtpickupnopM.text = "";
+                    //       txtgrwtnopM.text = "";
+                    //       txtnatureofgoodsM.text = "";
+                    //       txtff.text = "";
+                    //
+                    //       shipmentTypeSelected = "Select";
+                    //       commoditySelected = "Select";
+                    //       if (modeSelected == 0) {
+                    //         var masterAdded = await showDialog(
+                    //             barrierDismissible: false,
+                    //             context: context,
+                    //             builder: (context) {
+                    //               return buildMawbPopUpIpad();
+                    //             });
+                    //
+                    //         print("masterAdded");
+                    //         print(masterAdded);
+                    //       }
+                    //       else {
+                    //         var masterAdded = await showDialog(
+                    //             barrierDismissible: false,
+                    //             context: context,
+                    //             builder: (context) {
+                    //               return buildMawbPopUpIpad();
+                    //             });
+                    //
+                    //         print("masterAdded");
+                    //         print(masterAdded);
+                    //
+                    //         if (masterAdded != null) if (masterAdded == "y") {
+                    //           var userSelection = await showDialog(
+                    //             context: context,
+                    //             builder: (BuildContext context) =>
+                    //                 CustomConfirmDialog(
+                    //                     title: "ADD HOUSE ?",
+                    //                     description:
+                    //                         "Would you like Proceed to add House in this Master ",
+                    //                     buttonText: "Okay",
+                    //                     imagepath: 'assets/images/question.gif',
+                    //                     isMobile: useMobileLayout),
+                    //           );
+                    //           print("userSelection ==" +
+                    //               userSelection.toString());
+                    //
+                    //           if (userSelection != null) if (userSelection ==
+                    //               true) {
+                    //             txtMawbnoH.text = selectedMawbNo;
+                    //             txtPrefixH.text = selectedPrefix;
+                    //             txtOriginH.text = selectedOrigin;
+                    //
+                    //             txthawbnoH.text = "";
+                    //             txtpickupnopH.text = "";
+                    //             txtgrwtnopH.text = "";
+                    //             txtnatureofgoodsH.text = "";
+                    //
+                    //             txtff.text = "";
+                    //
+                    //             shipmentTypeSelected = "Select";
+                    //             commoditySelected = "Select";
+                    //
+                    //             showDialog(
+                    //                 barrierDismissible: false,
+                    //                 context: context,
+                    //                 builder: (context) {
+                    //                   return buildHawbPopUpIpad();
+                    //                 });
+                    //           }
+                    //         }
+                    //       }
+                    //     },
+                    //     style: ElevatedButton.styleFrom(
+                    //       elevation: 4.0,
+                    //       shape: RoundedRectangleBorder(
+                    //           borderRadius: BorderRadius.circular(10.0)), //
+                    //       padding: const EdgeInsets.all(0.0),
+                    //     ),
+                    //     child: Container(
+                    //       height: 50,
+                    //       width: 150,
+                    //       decoration: BoxDecoration(
+                    //         borderRadius: BorderRadius.circular(10),
+                    //         gradient: LinearGradient(
+                    //           begin: Alignment.topRight,
+                    //           end: Alignment.bottomLeft,
+                    //           colors: [
+                    //             Color(0xFF1220BC),
+                    //             Color(0xFF3540E8),
+                    //           ],
+                    //         ),
+                    //       ),
+                    //       child: Padding(
+                    //         padding:
+                    //         const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                    //         child: Align(
+                    //           alignment: Alignment.center,
+                    //           child: Text(
+                    //             'Add MAWB',
+                    //             style: TextStyle(
+                    //                 fontSize: 20,
+                    //                 fontWeight: FontWeight.normal,
+                    //                 color: Colors.white),
+                    //           ),
+                    //         ),
+                    //       ),
+                    //     ),
+                    //     //Text('CONTAINED BUTTON'),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -644,37 +1255,74 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                           ),
                         ),
                       )
-                    : widget.modeSelected.toLowerCase().contains("pick")
-                        ? Padding(
-                            padding: EdgeInsets.only(left: 40, right: 20),
-                            child: Container(
-                              height: 150,
-                              width: MediaQuery.of(context).size.width / 1.1,
-                              child: Card(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                      top: 10.0, bottom: 10.0, left: 40.0),
-                                  child: SizedBox(
-                                    width: MediaQuery.of(context).size.width /
-                                        1.19,
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      //rphysics: NeverScrollableScrollPhysics(),
-                                      itemBuilder: (BuildContext, index) {
-                                        AWB _awblist =
-                                            mawbList.elementAt(index);
-                                        return buildMawbListIpad12(
-                                            _awblist, index);
-                                      },
-                                      itemCount: mawbList.length,
-                                      shrinkWrap: true,
-                                      padding: EdgeInsets.all(5),
+                    : modeSelected ==
+                            1 // widget.modeSelected.toLowerCase().contains("pick")
+                        ? isVerified
+                            ? Padding(
+                                padding: EdgeInsets.only(left: 40, right: 20),
+                                child: Container(
+                                  height: 150,
+                                  width:
+                                      MediaQuery.of(context).size.width / 1.1,
+                                  child: Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          top: 10.0, bottom: 10.0, left: 40.0),
+                                      child: SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width /
+                                                1.19,
+                                        child: ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          //rphysics: NeverScrollableScrollPhysics(),
+                                          itemBuilder: (BuildContext, index) {
+                                            AWB _awblist = verifiedMawbList
+                                                .elementAt(index);
+                                            return buildMawbListIpad12(
+                                                _awblist, index);
+                                          },
+                                          itemCount: verifiedMawbList.length,
+                                          shrinkWrap: true,
+                                          padding: EdgeInsets.all(5),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          )
+                              )
+                            : Padding(
+                                padding: EdgeInsets.only(left: 40, right: 20),
+                                child: Container(
+                                  height: 180,
+                                  width:
+                                      MediaQuery.of(context).size.width / 1.1,
+                                  child: Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          top: 10.0, bottom: 10.0, left: 40.0),
+                                      child: SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width /
+                                                1.19,
+                                        child: ListView.builder(
+                                          //scrollDirection: Axis.horizontal,
+                                          physics:
+                                              NeverScrollableScrollPhysics(),
+                                          itemBuilder: (BuildContext, index) {
+                                            AWB _awblist =
+                                                mawbList.elementAt(index);
+                                            return buildMawbListIpad(
+                                                _awblist, index);
+                                          },
+                                          itemCount: mawbList.length,
+                                          shrinkWrap: true,
+                                          padding: EdgeInsets.all(5),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
                         : Padding(
                             padding: EdgeInsets.only(left: 40, right: 20),
                             child: Container(
@@ -799,8 +1447,7 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
             //       )
             //     :
 
-            if (mawbList.length > 0 &&
-                widget.modeSelected.toLowerCase().contains("pick"))
+            if ((mawbList.length > 0) && modeSelected == 1)
               Expanded(
                 flex: 0,
                 child: Padding(
@@ -830,65 +1477,67 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                                         ),
                                       ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 10.0),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                txtMawbnoH.text = selectedMawbNo;
-                                txtPrefixH.text = selectedPrefix;
-                                txtOriginH.text = selectedOrigin;
+                          shipmentTypeSelected != "Direct"
+                              ? Padding(
+                                  padding: const EdgeInsets.only(left: 10.0),
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      txtMawbnoH.text = selectedMawbNo;
+                                      txtPrefixH.text = selectedPrefix;
+                                      txtOriginH.text = selectedOrigin;
 
-                                txthawbnoH.text = "";
-                                txtpickupnopH.text = "";
-                                txtgrwtnopH.text = "";
-                                txtnatureofgoodsH.text = "";
+                                      txthawbnoH.text = "";
+                                      txtpickupnopH.text = "";
+                                      txtgrwtnopH.text = "";
+                                      txtnatureofgoodsH.text = "";
 
-                                showDialog(
-                                    barrierDismissible: false,
-                                    context: context,
-                                    builder: (context) {
-                                      return buildHawbPopUpIpad();
-                                    });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                elevation: 4.0,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(10.0)), //
-                                padding: const EdgeInsets.all(0.0),
-                              ),
-                              child: Container(
-                                height: 50,
-                                width: 150,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topRight,
-                                    end: Alignment.bottomLeft,
-                                    colors: [
-                                      Color(0xFF1220BC),
-                                      Color(0xFF3540E8),
-                                    ],
-                                  ),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                      top: 8.0, bottom: 8.0),
-                                  child: Align(
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      'Add HAWB',
-                                      style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.normal,
-                                          color: Colors.white),
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return buildHawbPopUpIpad();
+                                          });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      elevation: 4.0,
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10.0)), //
+                                      padding: const EdgeInsets.all(0.0),
                                     ),
+                                    child: Container(
+                                      height: 50,
+                                      width: 150,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topRight,
+                                          end: Alignment.bottomLeft,
+                                          colors: [
+                                            Color(0xFF1220BC),
+                                            Color(0xFF3540E8),
+                                          ],
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                            top: 8.0, bottom: 8.0),
+                                        child: Align(
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            'Add HAWB',
+                                            style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.normal,
+                                                color: Colors.white),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    //Text('CONTAINED BUTTON'),
                                   ),
-                                ),
-                              ),
-                              //Text('CONTAINED BUTTON'),
-                            ),
-                          ),
+                                )
+                              : SizedBox(),
                         ],
                       ),
                       SizedBox(height: 10),
@@ -933,28 +1582,53 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                             ),
                           ),
                         )
-                      : Padding(
-                          padding: EdgeInsets.only(left: 40, right: 20),
-                          child: Container(
-                            width: MediaQuery.of(context).size.width / 1.1,
-                            child: SizedBox(
-                              width: MediaQuery.of(context).size.width / 1.19,
-                              child: ListView.builder(
-                                // scrollDirection: Axis.vertical,
-                                physics: NeverScrollableScrollPhysics(),
-                                itemBuilder: (BuildContext, index) {
-                                  AWB _awblist =
-                                      hawbListToBind.elementAt(index);
+                      : isVerified
+                          ? Padding(
+                              padding: EdgeInsets.only(left: 40, right: 20),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width / 1.1,
+                                child: SizedBox(
+                                  width:
+                                      MediaQuery.of(context).size.width / 1.19,
+                                  child: ListView.builder(
+                                    // scrollDirection: Axis.vertical,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemBuilder: (BuildContext, index) {
+                                      AWB _awblist =
+                                      filteredHawbList.elementAt(index);
 
-                                  return buildHawbListIpad(_awblist, index);
-                                },
-                                itemCount: hawbListToBind.length,
-                                shrinkWrap: true,
-                                padding: EdgeInsets.all(5),
+                                      return buildHawbListIpad(_awblist, index);
+                                    },
+                                    itemCount: filteredHawbList.length,
+                                    shrinkWrap: true,
+                                    padding: EdgeInsets.all(5),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Padding(
+                              padding: EdgeInsets.only(left: 40, right: 20),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width / 1.1,
+                                child: SizedBox(
+                                  width:
+                                      MediaQuery.of(context).size.width / 1.19,
+                                  child: ListView.builder(
+                                    // scrollDirection: Axis.vertical,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemBuilder: (BuildContext, index) {
+                                      AWB _awblist =
+                                          hawbListToBind.elementAt(index);
+
+                                      return buildHawbListIpad(_awblist, index);
+                                    },
+                                    itemCount: hawbListToBind.length,
+                                    shrinkWrap: true,
+                                    padding: EdgeInsets.all(5),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
                 ),
               ),
           ]),
@@ -972,23 +1646,23 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
       children: [
         GestureDetector(
           onDoubleTap: () {
-            txtMawbnoM.text = _awb.mawbno;
-            txtPrefixM.text = _awb.prefix;
-            txtOriginM.text = _awb.origin;
-            txtpickupnopM.text = _awb.nop;
-            txtgrwtnopM.text = _awb.grwt;
-            txtnatureofgoodsM.text = _awb.natureofgoods;
-
-            commoditySelected = _awb.natureofgoods;
-
-            showDialog(
-                barrierDismissible: false,
-                context: context,
-                builder: (context) {
-                  return useMobileLayout
-                      ? buildMawbPopUpMobile()
-                      : buildMawbPopUpIpad();
-                });
+            // txtMawbnoM.text = _awb.mawbno;
+            // txtPrefixM.text = _awb.prefix;
+            // txtOriginM.text = _awb.origin;
+            // txtpickupnopM.text = _awb.nop;
+            // txtgrwtnopM.text = _awb.grwt;
+            // txtnatureofgoodsM.text = _awb.natureofgoods;
+            //
+            // commoditySelected = _awb.natureofgoods;
+            //
+            // showDialog(
+            //     barrierDismissible: false,
+            //     context: context,
+            //     builder: (context) {
+            //       return useMobileLayout
+            //           ? buildMawbPopUpMobile()
+            //           : buildMawbPopUpIpad();
+            //     });
           },
           onTap: () {
             runFilter(_awb.mawbno, _awb.origin, _awb.prefix);
@@ -1004,24 +1678,31 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                 gradient: LinearGradient(
                   begin: Alignment.topRight,
                   end: Alignment.bottomLeft,
-                  colors: [
-                    selectedMawbNo == _awb.mawbno
-                        ? Color(0xFFfd6607)
-                        : Color(0xFF076cfd),
-                    selectedMawbNo == _awb.mawbno
-                        ? Color(0xFFfd7f07)
-                        : Color(0xFF0785fd),
-                  ],
+                  colors: shipmentTypeSelected != "Direct"
+                      ? [
+                    Color(0xFFfd6607), Color(0xFFfd7f07)
+                          // selectedMawbNo == _awb.mawbno
+                          //     ? Color(0xFFfd6607)
+                          //     : Color(0xFF076cfd),
+                          // selectedMawbNo == _awb.mawbno
+                          //     ? Color(0xFFfd7f07)
+                          //     : Color(0xFF0785fd),
+                        ]
+                      : [Color(0xFFfd6607), Color(0xFFfd7f07)],
                 ),
-              ),
+                  border: Border.all(
+                    color: selectedMawbNo == _awb.mawbno
+                        ? Color(0xFF11249F)
+                        : Colors.transparent,
+                    width: 4
+                  )),
+
               child: Padding(
                 padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
                 child: Align(
                   alignment: Alignment.center,
                   child: Text(
-                    _awb.mawbno.substring(0, 3) +
-                        " \n " +
-                        _awb.mawbno.substring(4, _awb.mawbno.length),
+                    "${_awb.prefix}\n${_awb.mawbno}",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 18,
@@ -1079,22 +1760,24 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                 });
               }
             },
-            child: Container(
-              height: 40,
-              width: 40,
-              decoration: BoxDecoration(
-                  border: Border.all(
-                    width: 2,
-                    color: Colors.white,
+            child: isVerified
+                ? Container()
+                : Container(
+                    height: 40,
+                    width: 40,
+                    decoration: BoxDecoration(
+                        border: Border.all(
+                          width: 2,
+                          color: Colors.white,
+                        ),
+                        color: Colors.red,
+                        shape: BoxShape.circle),
+                    child: Icon(
+                      Icons.remove,
+                      color: Colors.white,
+                      size: 32,
+                    ),
                   ),
-                  color: Colors.red,
-                  shape: BoxShape.circle),
-              child: Icon(
-                Icons.remove,
-                color: Colors.white,
-                size: 32,
-              ),
-            ),
             // ),
           ),
         ),
@@ -1260,7 +1943,7 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                 barrierDismissible: false,
                 context: context,
                 builder: (context) {
-                  return buildHawbPopUpIpad();
+                  return buildHawbPopUpIpad(index);
                 });
           },
           child: Padding(
@@ -1461,14 +2144,16 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
               print("userSelection ==" + userSelection.toString());
 
               if (userSelection == true) {
-                hawbList.removeWhere((element) {
-                  return element.hawbno == _awb.hawbno;
-                });
-
+                // hawbList.removeWhere((element) {
+                //   return element.hawbno == _awb.hawbno;
+                // });
+                print("^^^^^^ $index");
+                hawbListToBind.removeAt(index);
+                hawbList.removeAt(index);
                 setState(() {});
               }
             },
-            child: Container(
+            child:isVerified?SizedBox(): Container(
               height: 40,
               width: 40,
               decoration: BoxDecoration(
@@ -1507,15 +2192,16 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
             txtgrwtnopM.text = _awb.grwt;
             txtnatureofgoodsM.text = _awb.natureofgoods;
             commoditySelected = _awb.natureofgoods;
-
+            print(_awb.natureofgoods);
             showDialog(
                 barrierDismissible: false,
                 context: context,
                 builder: (context) {
                   return useMobileLayout
                       ? buildMawbPopUpMobile()
-                      : buildMawbPopUpIpad();
+                      : buildMawbPopUpIpad(index);
                 });
+            print("@@@@ $index");
           },
           child: Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
@@ -1547,7 +2233,7 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                                           color: Color(0xFF11249F))),
                                   SizedBox(height: 3),
                                   Text(
-                                    _awb.mawbno,
+                                    "${_awb.prefix}-${_awb.mawbno}",
                                     style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.normal,
@@ -1716,14 +2402,14 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                 print("_awb.mawbno ==" + _awb.mawbno);
                 print("userSelection ==" + userSelection.toString());
 
-                mawbList.removeWhere((element) {
-                  return element.mawbno == _awb.mawbno;
-                });
-
+                // mawbList.removeWhere((element) {
+                //   return element.mawbno == _awb.mawbno;
+                // });
+                mawbList.removeAt(index);
                 setState(() {});
               }
             },
-            child: Container(
+            child: isVerified?SizedBox():Container(
               height: 40,
               width: 40,
               decoration: BoxDecoration(
@@ -2001,7 +2687,7 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
     );
   }
 
-  buildMawbPopUpIpad() {
+  buildMawbPopUpIpad([int? itemIndex]) {
     return Container(
       height: MediaQuery.of(context).size.height / 5.2, // height: 250,
       width: MediaQuery.of(context).size.width / 6,
@@ -2045,9 +2731,9 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
           children: [
             Row(
               children: [
-                if (widget.modeSelected.toLowerCase().contains("pick"))
+                if (modeSelected == 1)
                   SizedBox(
-                    width: MediaQuery.of(context).size.width / 3.8,
+                    width: MediaQuery.of(context).size.width / 2.5,
                     child: Text(
                       "Shipment/Pick-up type",
                       style: TextStyle(
@@ -2057,6 +2743,56 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                       ),
                     ),
                   ),
+              ],
+            ),
+            if (modeSelected == 1) SizedBox(height: 10),
+            Row(
+              children: [
+                if (modeSelected == 1)
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width / 2.5,
+                    child: Container(
+                      child: DropdownButtonFormField(
+                        isExpanded: true,
+                        isDense: true,
+                        //isExpanded: true,
+                        decoration: InputDecoration(
+                          //labelText: 'select option',
+                          contentPadding: EdgeInsets.fromLTRB(8, 0, 8, 0),
+                          // filled: true,
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                                color: Colors.grey.withOpacity(0.5), width: 1),
+                            borderRadius: BorderRadius.circular(4.0),
+                          ),
+                        ),
+                        dropdownColor: Colors.white,
+                        value:
+                            itemIndex != null ? shipmentTypeSelected : 'Select',
+                        items: ['Select', 'Direct', 'Consol']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(
+                              value,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            print("$shipmentTypeSelected----");
+                            shipmentTypeSelected = value.toString();
+                            print("$shipmentTypeSelected=====");
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            if (modeSelected == 1) SizedBox(height: 10),
+            Row(
+              children: [
                 SizedBox(
                   width: MediaQuery.of(context).size.width / 9,
                   child: Text(
@@ -2082,9 +2818,7 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                 SizedBox(
                   width: MediaQuery.of(context).size.width / 9,
                   child: Text(
-                    widget.modeSelected.toLowerCase().contains("pick")
-                        ? "Origin"
-                        : "Destination",
+                    modeSelected == 1 ? "Origin" : "Destination",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.normal,
@@ -2097,46 +2831,6 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
             SizedBox(height: 10),
             Row(
               children: [
-                if (widget.modeSelected.toLowerCase().contains("pick"))
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width / 4,
-                    child: Container(
-                      height: 40,
-                      child: DropdownButtonFormField(
-                        isExpanded: true,
-                        isDense: true,
-                        //isExpanded: true,
-                        decoration: InputDecoration(
-                          //labelText: 'select option',
-                          contentPadding: EdgeInsets.fromLTRB(8, 0, 8, 0),
-                          // filled: true,
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Colors.grey.withOpacity(0.5), width: 1),
-                            borderRadius: BorderRadius.circular(4.0),
-                          ),
-                        ),
-                        dropdownColor: Colors.white,
-                        value: 'Select',
-                        items: ['Select', 'Direct', 'Consol']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(
-                              value,
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            shipmentTypeSelected = value.toString();
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                if (widget.modeSelected.toLowerCase().contains("pick"))
-                  SizedBox(width: 10),
                 // SizedBox(
                 //   width: MediaQuery.of(context).size.width /
                 //       10, // hard coding child width
@@ -2211,7 +2905,7 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                                 contentPadding: EdgeInsets.symmetric(
                                     vertical: 8, horizontal: 8),
                               ),
-                    
+
                               // enabled: false,
                               onChanged: (txt) {}),
                           suggestionsCallback: (pattern) async {
@@ -2222,15 +2916,20 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                             return suggestionsBox;
                           },
                           itemBuilder: (context, AirlinesPrefix suggestion) {
-                            return ListTile(
-                              title: Text(suggestion.AirlinePrefix.toString()),
+                            return Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 24.0, vertical: 2.0),
+                              child: Text(
+                                suggestion.AirlinePrefix.toString(),
+                                style: TextStyle(fontSize: 20),
+                              ),
                             );
                           },
                           //suggestionsBoxDecoration: ,
                           onSuggestionSelected: (AirlinesPrefix suggestion) {
                             this.txtPrefixM.text =
                                 suggestion.AirlinePrefix.toString();
-                    
+
                             // bookingDetailsSave['Mode'] = suggestion.toString();
                           }),
                     ),
@@ -2279,77 +2978,85 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                 SizedBox(
                   width: MediaQuery.of(context).size.width /
                       10, // hard coding child width
-                  child: SingleChildScrollView(child: Container(
-                    height: 40,
-                    width: MediaQuery.of(context).size.width / 10,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.grey.withOpacity(0.5),
-                        width: 1.0,
+                  child: SingleChildScrollView(
+                    child: Container(
+                      height: 40,
+                      width: MediaQuery.of(context).size.width / 10,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey.withOpacity(0.5),
+                          width: 1.0,
+                        ),
+                        borderRadius: BorderRadius.circular(4.0),
                       ),
-                      borderRadius: BorderRadius.circular(4.0),
+                      child: TypeAheadField(
+                          //he
+                          textFieldConfiguration: TextFieldConfiguration(
+                              style: TextStyle(
+                                fontSize: 18.0,
+                                color: Colors.black,
+                              ),
+                              // ),
+                              keyboardType: TextInputType.text,
+                              maxLength: 3,
+                              controller: txtOriginM,
+                              textCapitalization: TextCapitalization.characters,
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                counterText: "",
+                                hintText: "Select origin",
+                                hintStyle: TextStyle(color: Colors.grey),
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 8, horizontal: 8),
+                              ),
+                              onChanged: (txt) {}),
+                          suggestionsCallback: (pattern) async {
+                            return getSuggestionsOrgDest(pattern);
+                          },
+                          transitionBuilder:
+                              (context, suggestionsBox, controller) {
+                            return suggestionsBox;
+                          },
+                          itemBuilder: (context, Airport suggestion) {
+                            return Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20.0, vertical: 2.0),
+                              child: Text(
+                                suggestion.CityCode.toString(),
+                                style: TextStyle(fontSize: 20),
+                              ),
+                            );
+                          },
+                          // suggestionsBoxDecoration: ,
+                          onSuggestionSelected: (Airport suggestion) {
+                            this.txtOriginM.text =
+                                suggestion.CityCode.toString();
+
+                            // bookingDetailsSave['Mode'] = suggestion.toString();
+                          }),
+
+                      // TextField(
+                      //   keyboardType: TextInputType.text, maxLength: 3,
+                      //   // inputFormatters: [FilteringTextInputFormatter.allow(filterPattern),
+                      //   controller: txtOriginM,
+                      //   //inputFormatters: [UpperCaseTextFormatter()],
+                      //   textCapitalization: TextCapitalization.characters,
+                      //   decoration: InputDecoration(
+                      //     border: InputBorder.none,
+                      //     hintText: "Enter origin",
+                      //     counterText: "",
+                      //     hintStyle: TextStyle(color: Colors.grey),
+                      //     contentPadding:
+                      //         EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      //     isDense: true,
+                      //   ),
+                      //   style: TextStyle(
+                      //     fontSize: 18.0,
+                      //     color: Colors.black,
+                      //   ),
+                      // ),
                     ),
-                    child: TypeAheadField(
-                      //he
-                        textFieldConfiguration: TextFieldConfiguration(
-                            style: TextStyle(
-                              fontSize: 18.0,
-                              color: Colors.black,
-                            ),
-                            // ),
-                            keyboardType: TextInputType.text,
-                            maxLength: 3,
-                            controller: txtOriginM,
-                            textCapitalization: TextCapitalization.characters,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              counterText: "",
-                              hintText: "Select origin",
-                              hintStyle: TextStyle(color: Colors.grey),
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: 8, horizontal: 8),
-                            ),
-                            onChanged: (txt) {}),
-                        suggestionsCallback: (pattern) async {
-                          return getSuggestionsOrgDest(pattern);
-                        },
-                        transitionBuilder:
-                            (context, suggestionsBox, controller) {
-                          return suggestionsBox;
-                        },
-                        itemBuilder: (context, Airport suggestion) {
-                          return ListTile(
-                            title: Text(suggestion.CityCode.toString()),
-                          );
-                        },
-                        // suggestionsBoxDecoration: ,
-                        onSuggestionSelected: (Airport suggestion) {
-                          this.txtOriginM.text = suggestion.CityCode.toString();
-
-                          // bookingDetailsSave['Mode'] = suggestion.toString();
-                        }),
-
-                    // TextField(
-                    //   keyboardType: TextInputType.text, maxLength: 3,
-                    //   // inputFormatters: [FilteringTextInputFormatter.allow(filterPattern),
-                    //   controller: txtOriginM,
-                    //   //inputFormatters: [UpperCaseTextFormatter()],
-                    //   textCapitalization: TextCapitalization.characters,
-                    //   decoration: InputDecoration(
-                    //     border: InputBorder.none,
-                    //     hintText: "Enter origin",
-                    //     counterText: "",
-                    //     hintStyle: TextStyle(color: Colors.grey),
-                    //     contentPadding:
-                    //         EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                    //     isDense: true,
-                    //   ),
-                    //   style: TextStyle(
-                    //     fontSize: 18.0,
-                    //     color: Colors.black,
-                    //   ),
-                    // ),
-                  ),),
+                  ),
                 ),
               ],
             ),
@@ -2370,9 +3077,7 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                 SizedBox(
                   width: MediaQuery.of(context).size.width / 6.4,
                   child: Text(
-                    (widget.modeSelected.toLowerCase().contains("pick"))
-                        ? "Pick-up NoP"
-                        : "Drop-off NoP",
+                    (modeSelected == 1) ? "Pick-up NoP" : "Drop-off NoP",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.normal,
@@ -2455,10 +3160,9 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         counterText: "",
-                        hintText:
-                            (widget.modeSelected.toLowerCase().contains("pick"))
-                                ? "Enter pick-up NoP"
-                                : "Enter drop-off NoP",
+                        hintText: (modeSelected == 1)
+                            ? "Enter pick-up NoP"
+                            : "Enter drop-off NoP",
                         hintStyle: TextStyle(color: Colors.grey),
                         contentPadding:
                             EdgeInsets.symmetric(vertical: 8, horizontal: 8),
@@ -2531,9 +3235,8 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                 ),
               ],
             ),
-            if (widget.modeSelected.toLowerCase().contains("drop"))
-              SizedBox(height: 10),
-            if (widget.modeSelected.toLowerCase().contains("drop"))
+            if (modeSelected == 0) SizedBox(height: 10),
+            if (modeSelected == 0)
               Row(
                 children: [
                   SizedBox(
@@ -2549,10 +3252,9 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                   ),
                 ],
               ),
-            if (widget.modeSelected.toLowerCase().contains("drop"))
-              SizedBox(height: 10),
+            if (modeSelected == 0) SizedBox(height: 10),
 
-            if (widget.modeSelected.toLowerCase().contains("drop"))
+            if (modeSelected == 0)
               Row(
                 children: [
                   SizedBox(
@@ -2624,32 +3326,24 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                       ),
                       hint: Text("---- Select ----", style: iPadTextFontStyle),
                       dropdownColor: Colors.white,
-                      value: commoditySelected == ""
-                          ? "Select"
-                          : commoditySelected, // "Select",
-                      items: [
-                        'Select',
-                        'General/ GEN',
-                        'Perishable/ PER',
-                        'Dangerous/ DGR',
-                        'Human remains in coffins/ HUM',
-                        'Live animal/ AVI',
-                        'Pharmaceuticals/ PIL',
-                        'Save Human Life/ SHL',
-                        'Living human organs/blood/ LHO',
-                        'Over Dimension/ ODC',
-                      ].map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(
-                            value,
-                            style: iPadTextFontStyle,
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
+                      value: itemIndex != null
+                          ? commoditySelectedID
+                          : selectedBaseForCommId,
+                      // "Select",
+                      items: commodityList
+                          .map((comm) => DropdownMenuItem(
+                                value: comm.shcId,
+                                child: Text(
+                                  comm.specialHandlingCode.trim(),
+                                  style: iPadTextFontStyle,
+                                ),
+                              ))
+                          .toList(),
+                      onChanged: (int? value) {
                         setState(() {
                           commoditySelected = value.toString();
+                          commoditySelectedID = value!;
+                          print(commoditySelected);
                         });
                       },
                     ),
@@ -2734,8 +3428,16 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
             child: ElevatedButton(
               //textColor: Colors.black,
               onPressed: () {
+                var masterNo = txtMawbnoM.text.substring(0, 7);
+                var modValue = int.parse(masterNo) % 7;
+                var validMaster = masterNo + modValue.toString();
+                if (txtMawbnoM.text.length != 8 ||
+                    txtMawbnoM.text != validMaster) {
+                  txtMawbnoM.text = "";
+                  return;
+                }
                 AWB _newMawbRow;
-                if (widget.modeSelected.toLowerCase().contains("pick")) {
+                if (modeSelected == 1) {
                   _newMawbRow = new AWB(
                       shiptype: shipmentTypeSelected,
                       origin: txtOriginM.text,
@@ -2777,13 +3479,35 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                 //     index: mawbList.length);
 
                 print("_newMawbRow.index ==" + _newMawbRow.index.toString());
-                mawbList.add(_newMawbRow);
+                if (modeSelected == 1) {
+                  // mawbList = [];
+                  // hawbList = [];
+                  if (itemIndex != null) {
+                    mawbList[itemIndex] = _newMawbRow;
+                  } else {
+                    mawbList = [];
+                    hawbList = [];
+                    mawbList.add(_newMawbRow);
+                  }
+                  isVerified = false;
+                  print("Added $isVerified");
+                } else {
+                  print("+++++ $itemIndex");
+                  if (itemIndex != null) {
+                    mawbList[itemIndex] = _newMawbRow;
+                    print("edit");
+                  } else {
+                    mawbList.add(_newMawbRow);
+                  }
+                }
 
                 setState(() {
                   selectedMawbNo = txtMawbnoM.text;
                   selectedPrefix = txtPrefixM.text;
                   selectedOrigin = txtOriginM.text;
+                  print("^^^^^^^^^^$selectedMawbNo");
                   runFilter(selectedMawbNo, selectedOrigin, selectedPrefix);
+                  print("$selectedMawbNo ^^^^^^^^^^");
                   txtOriginM.text = "";
                   txtPrefixM.text = "";
                   txtOriginM.text = "";
@@ -2856,29 +3580,30 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
 
       int iWalkIn = 0;
 
-      for (WalkinMain u in widget.walkinTable) {
-        String a = "{\"driName\": \"${u.driName}\"," +
-            "\"driSTA\":\"${u.driSTA}\"," +
-            "\"lisNo\":\"${u.lisNo}\"," +
-            "\"mobNo\":\"${u.mobNo}\"," +
-            "\"email\":\"${u.email}\"," +
-            "\"mobNoPrefix\":\"352\"," +
-            "\"terminal\":\"${u.terminal}\"," +
-            "\"truckCompany\":\"${u.truckCompany}\"," +
-            "\"vehType\":\"${u.vehType}\"," +
-            "\"vehNo\":\"${u.vehNo}\" }";
-        if (iWalkIn == 0)
-          walkinTableString = walkinTableString + a;
-        else
-          walkinTableString = walkinTableString + "," + a;
+      // for (WalkinMain u in widget.walkinTable) {
+      //   String a = "{\"driName\": \"${u.driName}\"," +
+      //       "\"driSTA\":\"${u.driSTA}\"," +
+      //       "\"lisNo\":\"${u.lisNo}\"," +
+      //       "\"mobNo\":\"${u.mobNo}\"," +
+      //       "\"email\":\"${u.email}\"," +
+      //       "\"mobNoPrefix\":\"352\"," +
+      //       "\"terminal\":\"${u.terminal}\"," +
+      //       "\"truckCompany\":\"${u.truckCompany}\"," +
+      //       "\"vehType\":\"${u.vehType}\"," +
+      //       "\"vehNo\":\"${u.vehNo}\" }";
+      //   if (iWalkIn == 0)
+      //     walkinTableString = walkinTableString + a;
+      //   else
+      //     walkinTableString = walkinTableString + "," + a;
+      //
+      //   iWalkIn++;
+      // }
 
-        iWalkIn++;
-      }
       //  finalWalkInTableString = "[" + walkinTableString + "]";
       finalWalkInTableString = walkinTableString;
       //finalWalkInTableString = json.decode(finalWalkInTableString);
 
-      if (widget.modeSelected.toLowerCase().contains("drop")) {
+      if (modeSelected == 0) {
         String mawbDropOffTableString = "";
         int iMawbDropOff = 0;
 
@@ -2905,7 +3630,6 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
         }
         finalMawbDropOffTableString = "[" + mawbDropOffTableString + "]";
         //finalWalkInTableString = json.decode(finalWalkInTableString);
-
       } else {
         String mawbPickUpTableString = "";
         int iMawbPickup = 0;
@@ -2933,7 +3657,6 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
         }
         finalMawbPickUpTableString = "[" + mawbPickUpTableString + "]";
         //finalWalkInTableString = json.decode(finalWalkInTableString);
-
       }
 
       if (hawbList.length > 0) {
@@ -2965,7 +3688,6 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
         finalHawbTableString = "[" + hawbTableString + "]";
         // finalHawbTableString =  hawbTableString ;
         //finalWalkInTableString = json.decode(finalWalkInTableString);
-
       }
 
       //import
@@ -2974,7 +3696,7 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
       // print("json.decode(finalHawbTableString)");
       // print(json.decode(finalHawbTableString));
 
-      if (widget.modeSelected.toLowerCase().contains("pick")) {
+      if (modeSelected == 1) {
         print(json.decode(finalMawbPickUpTableString));
         if (!hawbList.isEmpty) print(json.decode(finalHawbTableString));
       } else {
@@ -2985,7 +3707,7 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
         finalHawbTableString = "[]";
       }
 
-      var queryParams = widget.modeSelected.toLowerCase().contains("pick")
+      var queryParams = modeSelected == 1
           ? hawbList.isEmpty
               ? {
                   //import
@@ -3006,7 +3728,7 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
             };
       await Global()
           .postData(
-        widget.modeSelected.toLowerCase().contains("pick")
+        modeSelected == 1
             ? Settings.SERVICES['SaveImportShipment']
             : Settings.SERVICES['SaveExportShipment'],
         queryParams,
@@ -3192,7 +3914,8 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                         borderRadius: BorderRadius.circular(4.0),
                       ),
                       child: TextField(
-                        keyboardType: TextInputType.text, maxLength: 3,
+                        keyboardType: TextInputType.text,
+                        maxLength: 3,
                         // inputFormatters: [FilteringTextInputFormatter.allow(filterPattern),
                         controller: txtOriginM,
                         //inputFormatters: [UpperCaseTextFormatter()],
@@ -3616,9 +4339,10 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                   //  expands: true,
                   // minLines: 1,
                   minLines: 1,
-                  maxLines: 2, // allow user to enter 5 line in textfield
-                  keyboardType: TextInputType
-                      .multiline, // user keyboard will have a button to move cursor to next line
+                  maxLines: 2,
+                  // allow user to enter 5 line in textfield
+                  keyboardType: TextInputType.multiline,
+                  // user keyboard will have a button to move cursor to next line
                   maxLength: 50,
                   controller: txtnatureofgoodsM,
                   decoration: InputDecoration(
@@ -3680,8 +4404,17 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
             child: ElevatedButton(
               //textColor: Colors.black,
               onPressed: () async {
+                var masterNo = txtMawbnoM.text.substring(0, 7);
+                var modValue = int.parse(masterNo) % 7;
+                var validMaster = masterNo + modValue.toString();
+                if (txtMawbnoM.text.length != 8 ||
+                    txtMawbnoM.text != validMaster) {
+                  txtMawbnoM.text = "";
+                  return;
+                }
                 AWB _newMawbRow = new AWB(
-                    shiptype: shipmentTypeSelected, //"shiptype",
+                    shiptype: shipmentTypeSelected,
+                    //"shiptype",
                     origin: txtOriginM.text,
                     prefix: txtPrefixM.text,
                     mawbno: txtMawbnoM.text,
@@ -3754,7 +4487,7 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
     );
   }
 
-  buildHawbPopUpIpad() {
+  buildHawbPopUpIpad([int? itemIndex]) {
     return Container(
       height: MediaQuery.of(context).size.height / 5.2,
       width: MediaQuery.of(context).size.width / 6,
@@ -4010,7 +4743,7 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                       borderRadius: BorderRadius.circular(4.0),
                     ),
                     child: TextField(
-                      maxLength: 10,
+                      maxLength: 16,
                       keyboardType: TextInputType.text,
                       textCapitalization: TextCapitalization.characters,
                       controller: txthawbnoH,
@@ -4148,9 +4881,10 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                 //  expands: true,
                 // minLines: 1,
                 minLines: 1,
-                maxLines: 2, // allow user to enter 5 line in textfield
-                keyboardType: TextInputType
-                    .multiline, // user keyboard will have a button to move cursor to next line
+                maxLines: 2,
+                // allow user to enter 5 line in textfield
+                keyboardType: TextInputType.multiline,
+                // user keyboard will have a button to move cursor to next line
                 maxLength: 50,
                 controller: txtnatureofgoodsH,
                 decoration: InputDecoration(
@@ -4210,7 +4944,16 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
             padding: const EdgeInsets.only(right: 16.0, bottom: 16.0),
             child: ElevatedButton(
               //textColor: Colors.black,
+
               onPressed: () {
+                // var masterNo = txtMawbnoM.text.substring(0, 7);
+                // var modValue = int.parse(masterNo) % 7;
+                // var validMaster = masterNo + modValue.toString();
+                // if (txtMawbnoM.text.length != 8 ||
+                //     txtMawbnoM.text != validMaster) {
+                //   txtMawbnoM.text = "";
+                //   return;
+                // }
                 AWB _newHawbRow = new AWB(
                     shiptype: shipmentTypeSelected,
                     origin: txtOriginH.text,
@@ -4225,8 +4968,13 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                     index: hawbList.length);
 
                 print("_newHawbRow.index ==" + _newHawbRow.index.toString());
-                hawbList.add(_newHawbRow);
-
+                if (itemIndex != null) {
+                  hawbList[itemIndex] = _newHawbRow;
+                } else {
+                  hawbList=[];
+                  hawbList.add(_newHawbRow);
+                }
+                isVerified = false;
                 setState(() {
                   txtOriginH.text = "";
                   txtPrefixH.text = "";
@@ -4594,7 +5342,6 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
               //   ],
               // ),
               // SizedBox(height: 10),
-
               SizedBox(
                 width: MediaQuery.of(context).size.width / 1.8,
                 child: Text(
@@ -4787,9 +5534,10 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
                   //  expands: true,
                   // minLines: 1,
                   minLines: 1,
-                  maxLines: 2, // allow user to enter 5 line in textfield
-                  keyboardType: TextInputType
-                      .multiline, // user keyboard will have a button to move cursor to next line
+                  maxLines: 2,
+                  // allow user to enter 5 line in textfield
+                  keyboardType: TextInputType.multiline,
+                  // user keyboard will have a button to move cursor to next line
 
                   controller: txtnatureofgoodsH,
                   decoration: InputDecoration(
@@ -4850,8 +5598,17 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
             child: ElevatedButton(
               //textColor: Colors.black,
               onPressed: () {
+                var masterNo = txtMawbnoM.text.substring(0, 7);
+                var modValue = int.parse(masterNo) % 7;
+                var validMaster = masterNo + modValue.toString();
+                if (txtMawbnoM.text.length != 8 ||
+                    txtMawbnoM.text != validMaster) {
+                  txtMawbnoM.text = "";
+                  return;
+                }
                 AWB _newHawbRow = new AWB(
-                    shiptype: shipmentTypeSelected, //"shiptype",
+                    shiptype: shipmentTypeSelected,
+                    //"shiptype",
                     origin: txtOriginH.text,
                     prefix: txtPrefixH.text,
                     mawbno: txtMawbnoH.text,
@@ -4925,16 +5682,29 @@ class _WalkInAwbDetailsState extends State<WalkInAwbDetails> {
     print("hawbList.length = " + hawbList.length.toString());
 
     List<AWB> results = [];
+    List<AWB> results2 = [];
     results.addAll(hawbList);
-
-    results.retainWhere((AWB element) =>
-        element.mawbno.toLowerCase().contains(enteredKeyword.toLowerCase()));
-
+    // results2.addAll(verifiedHawbList);
+    print("results.length r = " + results.length.toString());
+    print("results2.length = " + results2.length.toString());
+    results.where((AWB element) =>
+        element.index==mawbList[0].index);
+    results2=verifiedHawbList.where((AWB awb) => awb.mawbno == enteredKeyword).toList();
     print("results.length = " + results.length.toString());
+    print("results2.length = " + results2.length.toString());
+    results2.forEach((awb) => print("mawbno: ${awb.mawbno}"));
+    for (AWB i in results) {
+      i.mawbno = enteredKeyword;
+      i.nop = mawbList[0].nop;
+      i.grwt = mawbList[0].grwt;
+      i.prefix = mawbList[0].prefix;
+    }
 
     setState(() {
       hawbListToBind = results;
+      filteredHawbList = results2;
       selectedMawbNo = enteredKeyword;
+      print("******$selectedMawbNo");
       selectedOrigin = origin;
       selectedPrefix = prefix;
     });

@@ -31,12 +31,16 @@ UserDetails loggedinUser = new UserDetails(
     OrganizationBranchIdString: "",
     OrganizationtypeIdString: "");
 String displayName = "un";
+bool isTerminalAlreadySelected = false;
+bool isWalkInEnable = false;
 String selectedTerminal = "";
-// String selectedBaseStation = "Select";
-// String selectedBaseStationBranch = "Select";
+String selectedBaseStation = "Select";
+String selectedBaseStationBranch = "";
 int selectedTerminalID = 0;
 int selectedBaseStationID = 0;
 int selectedBaseStationBranchID = 0;
+int selectedBaseForCommId = 0;
+int selectedCommID = 0;
 List suspendedBY = [];
 List<WarehouseTerminals> terminalsList = [];
 List<WarehouseTerminals> terminalsListDDL = [];
@@ -46,7 +50,7 @@ List<WarehouseBaseStationBranch> baseStationBranchList = [];
 List<Vehicletypes> vehicletypesList = [];
 List<DamageType> damageTypeList = [];
 List<AcceptanceType> rejectionReasonsList = [];
-
+List<Commodity> commodityList = [];
 List<Airport> airportList = [];
 List<AirlinesPrefix> airlinesPrefixList = [];
 
@@ -65,7 +69,7 @@ class Global {
   // static List<VesselMaster> vesselMaster = [];
 
   Future<Post> postData(service, payload) async {
-   print("payload " + payload.toString());
+    print("payload " + payload.toString());
     print("encoded payload " + json.encode(payload));
 
     // var connectivityResult = await (Connectivity().checkConnectivity());
@@ -174,7 +178,7 @@ class Global {
 
   Future<Post> fetchDataLoadUnload(payload) async {
     print("fetchDataLoadUnload payload " + payload.toString());
-        print("fetchDataLoadUnload encoded payload " + json.encode(payload));
+    print("fetchDataLoadUnload encoded payload " + json.encode(payload));
     var newURL =
         "https://atlacssrv.kalelogistics.com/ACS_ML/api/DockTime/Predict22";
     print("fetch data for API = " + newURL);

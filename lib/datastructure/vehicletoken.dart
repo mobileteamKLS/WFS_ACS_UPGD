@@ -591,6 +591,30 @@ class WarehouseBaseStation {
       };
 }
 
+class Commodity {
+  int shcId;
+  String specialHandlingCode;
+  String description;
+
+  Commodity({
+    required this.shcId,
+    required this.specialHandlingCode,
+    required this.description,
+  });
+
+  factory Commodity.fromJson(Map<String, dynamic> json) => Commodity(
+    shcId: json["SHCId"],
+    specialHandlingCode: json["SpecialHandlingCode"],
+    description: json["Description"]==null?"":json["Description"],
+  );
+
+  Map<String, dynamic> toMap() => {
+    "SHCId": shcId,
+    "SpecialHandlingCode": specialHandlingCode,
+    "Description": description,
+  };
+}
+
 class WarehouseBaseStationTrucker {
   int organizationId;
   String orgName;
